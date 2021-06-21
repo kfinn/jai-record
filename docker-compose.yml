@@ -1,0 +1,11 @@
+services:
+  workspace:
+    image: jai-workspace
+    volumes:
+      - $JAI_HOME:/jai:ro
+      - .:/workspace:rw
+    working_dir: /workspace
+  db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: password
