@@ -21,7 +21,6 @@ find_user :: (id: int) -> *User, success: bool {
   pool: Pool;
   set_allocators(*pool);
   defer reset(*pool);
-  defer print("reset pool\n");
 
   pool_context := context;
   pool_context.allocator = pool_allocator;
@@ -30,7 +29,7 @@ find_user :: (id: int) -> *User, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return null, false;
   
-  result := cast(*User) alloc(size_of(User));
+  result := New(User);
 
   push_context pool_context {
     users, execute_success := execute(connection, User, FIND_USER_FORMAT_STRING, id);

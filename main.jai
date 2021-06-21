@@ -6,8 +6,6 @@
 #load "repos/user_repo.jai";
 
 main :: () {
-  print("%\n", User);
-
   {
     user, success := find_user(1);
     if success {
