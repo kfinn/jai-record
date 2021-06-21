@@ -1,10 +1,5 @@
 #import "Pool";
 
-Nullable :: struct($Value: $T) {
-  present: bool;
-  value: Value;
-}
-
 time_t :: s64;
 UUID :: string;
 
