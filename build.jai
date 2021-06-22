@@ -1,0 +1,46 @@
+#import "Basic";
+#import "Compiler";
+
+#run {
+  target_workspace := compiler_create_workspace("jai-record");
+  if !target_workspace {
+    print("Workspace creation failed.\n");
+    return;
+  }
+
+  target_workspace_options := get_build_options();
+  target_workspace_options.output_type = .EXECUTABLE;
+  target_workspace_options.output_executable_name = "jai-record";
+  set_build_options(target_workspace_options, target_workspace);
+
+  compiler_begin_intercept(target_workspace);
+  add_build_file("src/main.jai", target_workspace);
+  
+  while true {
+    message := compiler_wait_for_message();
+    if !message break;
+    
+    if message.kind == {
+      case .TYPECHECKED;
+        typechecked := cast(*Message_Typechecked) message;
+        for declaration: typechecked.declarations {
+          for note: declaration.notes {
+            if note.text == "Test" && declaration.name {
+              add_build_string(tprint("#run %();\n", declaration.name), target_workspace);
+            }
+          }
+        }
+      case .COMPLETE;
+        // The compiler sends us this message when compilation is finished.
+        break;
+    }
+  }
+
+  compiler_end_intercept(target_workspace);
+
+  // None of the code in this file is intended to end up in an executable
+  // of any kind. So, we tell the compiler not to make an executable for us:
+  build_workspace_options := get_build_options();
+  build_workspace_options.output_type = .NO_OUTPUT;  // No executable for the primary workspace.
+  set_build_options(build_workspace_options);
+};

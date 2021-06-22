@@ -18,8 +18,7 @@ jai_record_pg_connection :: () -> *PGconn, success: bool {
   }
 }
 
-define_finder :: ($table_name: string, $Record: Type) -> ((id: int) -> (*Record, success: bool)) {
-  return (id: type_of(Record.id)) -> *Record, success: bool {
+find :: ($Record: Type, $table_name: string, id: type_of(Record.id)) -> *Record, success: bool {
     query_string_builder: String_Builder;
     defer free_buffers(*query_string_builder);
 
@@ -56,5 +55,11 @@ define_finder :: ($table_name: string, $Record: Type) -> ((id: int) -> (*Record,
     }
 
     return result, true;
-  };
 }
+
+define_repo :: ($table_name: string, $Record: Type) -> Type {
+  result :: struct {
+    find :: #bake_arguments find(Record=Record, table_name=table_name);
+  };
+  return result;
+};

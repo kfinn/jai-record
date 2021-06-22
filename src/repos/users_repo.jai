@@ -5,4 +5,4 @@ User :: struct {
   email: string;
 };
 
-find_user :: #run define_finder("users", User);
+UsersRepo :: #run define_repo("users", User);

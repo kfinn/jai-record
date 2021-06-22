@@ -7,4 +7,4 @@ Todo :: struct {
   updated_at: time_t;
 }
 
-find_todo :: #run define_finder("todos", Todo);
+TodosRepo :: #run define_repo("todos", Todo);

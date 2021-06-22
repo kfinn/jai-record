@@ -1,6 +1,6 @@
 #import "Basic";
 
-#load "vendor/jai-postgres/module.jai";
+#load "../vendor/jai-postgres/module.jai";
 
 #load "repo.jai";
 #load "repos/users_repo.jai";
@@ -8,7 +8,7 @@
 
 main :: () {
   {
-    user, success := find_user(1);
+    user, success := UsersRepo.find(1);
     if success {
       print("success: true, user: %\n", <<user);
       free(user);
@@ -17,7 +17,7 @@ main :: () {
     }
   }
   {
-    user, success := find_user(2);
+    user, success := UsersRepo.find(2);
     if success {
       print("success: true, user: %\n", <<user);
       free(user);
@@ -26,7 +26,7 @@ main :: () {
     }
   }
   {
-    user, success := find_user(3);
+    user, success := UsersRepo.find(3);
     if success {
       print("success: true, user: %\n", <<user);
       free(user);
@@ -35,7 +35,7 @@ main :: () {
     }
   }
   {
-    todo, success := find_todo(1);
+    todo, success := TodosRepo.find(1);
     if success {
       print("success: true, todo: %\n", <<todo);
       free(todo);
@@ -44,7 +44,7 @@ main :: () {
     }
   }
   {
-    todo, success := find_todo(2);
+    todo, success := TodosRepo.find(2);
     if success {
       print("success: true, todo: %\n", <<todo);
       free(todo);
@@ -53,7 +53,7 @@ main :: () {
     }
   }
   {
-    todo, success := find_todo(3);
+    todo, success := TodosRepo.find(3);
     if success {
       print("success: true, todo: %\n", <<todo);
       free(todo);
