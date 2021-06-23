@@ -23,7 +23,7 @@ User :: #run sql_select(
 
 UsersRepo :: struct {
   find :: (id: int) -> *User, success: bool {
-    users, sql_execute_success := sql_execute(User, "users WHERE id = $1", id);
+    users, sql_execute_success := sql_execute(User, "users", "id = $1", id);
     if !sql_execute_success return null, false;
     if users.count == 0 return null, false;
 

@@ -1,16 +1,25 @@
 SqlFrom :: string;
 
-sql_execute :: ($Select: Type, sql_from: string, args: ..Any) -> []Select, success: bool {
-  sql_expression := sprint(
-    "SELECT % FROM %",
-    Select.SQL_EXPRESSION,
-    sql_from
-  );
+sql_expression_to_string :: ($select: Type, from: string, where := "") -> string {
+  string_builder: String_Builder;
+  defer free_buffers(*string_builder);
 
+  print_to_builder(*string_builder, "SELECT % ", select.SQL_EXPRESSION);
+  print_to_builder(*string_builder, "FROM % ", from);
+  if where.count > 0 {
+    print_to_builder(*string_builder, "WHERE % ", where);
+  }
+
+  return builder_to_string(*string_builder);
+}
+
+sql_execute :: ($Select: Type, sql_from: string, sql_where := "", args: ..Any) -> []Select, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return Select.[], false;
 
-  results, execute_success := execute(connection, Select, sql_expression, ..args);
+  expression_string := sql_expression_to_string(Select, sql_from, sql_where);
+
+  results, execute_success := execute(connection, Select, expression_string, ..args);
   if !execute_success return Select.[], false;
   return results, true;
 }
@@ -45,7 +54,7 @@ sql_execute_test :: () {
 
   assert(expected.count == actual.count);
   for expected, expected_index: expected {
-    // TODO: why does this break?
+    // TODO: seems like psql ints don't work correctly at compile time, but are fine at run time
     // assert(expected.user_id == actual[expected_index].user_id, "expected: %, actual: %", expected.user_id, actual[expected_index].user_id);
     assert(expected.uppercase_email == actual[expected_index].uppercase_email, "expected: %, actual: %", expected.uppercase_email, actual[expected_index].uppercase_email);
   }
