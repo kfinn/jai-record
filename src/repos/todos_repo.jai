@@ -1,4 +1,5 @@
-Todo :: #run sql_select(
+TodosRepo :: #run repo(
+  "todos",
   SqlSelection.{
     name="id",
     type=int,
@@ -30,13 +31,3 @@ Todo :: #run sql_select(
     expression="updated_at",
   }
 );
-
-TodosRepo :: struct {
-  find :: (id: int) -> *Todo, success: bool {
-    todos, sql_execute_success := sql_execute(Todo, "todos", "id = $1", id);
-    if !sql_execute_success return null, false;
-    if todos.count == 0 return null, false;
-
-    return *todos[0], true;
-  }
-};

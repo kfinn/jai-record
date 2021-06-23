@@ -1,4 +1,5 @@
-User :: #run sql_select(
+UsersRepo :: #run repo(
+  "users", 
   SqlSelection.{
     name="id",
     type=int,
@@ -20,13 +21,3 @@ User :: #run sql_select(
     expression="email"
   },
 );
-
-UsersRepo :: struct {
-  find :: (id: int) -> *User, success: bool {
-    users, sql_execute_success := sql_execute(User, "users", "id = $1", id);
-    if !sql_execute_success return null, false;
-    if users.count == 0 return null, false;
-
-    return *users[0], true;
-  }
-};
