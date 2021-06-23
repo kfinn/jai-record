@@ -5,6 +5,7 @@
 #load "repo.jai";
 #load "repos/users_repo.jai";
 #load "repos/todos_repo.jai";
+#load "sql.jai";
 
 main :: () {
   {
