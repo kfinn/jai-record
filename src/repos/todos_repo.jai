@@ -31,3 +31,8 @@ TodosRepo :: #run repo(
     expression="updated_at",
   }
 );
+
+TodosCreatedAfter :: SqlWhere(
+  SQL_EXPRESSION="created_at > CAST(? AS TIMESTAMP)",
+  ARGS_COUNT=1
+);

@@ -17,19 +17,35 @@ jai_record_pg_connection :: () -> *PGconn, success: bool {
 }
 
 find_id_column_type :: (sql_selections: []SqlSelection) -> Type {
+  result: *Type;
   for sql_selections {
-    if it.name == "id" return it.type;
+    if it.name == "id" { 
+      result = *it.type;
+      break;
+    }
   }
-  assert(false, "no id column found in table_repo selects");
+  // TODO: test this
+  assert(result != null, "no ID column specified for repo");
+  return <<result;
 }
+
+WithId :: SqlWhere(
+  SQL_EXPRESSION="id = ?",
+  ARGS_COUNT=1
+);
 
 repo :: ($table_name: string, $sql_selections: ..SqlSelection) -> Type {
   IdType :: #run find_id_column_type(sql_selections);
   Select :: #run sql_select(..sql_selections);
 
   return struct {
+    Select :: Select;
+    table_name :: table_name;
     find :: (id: IdType) -> *Select, success: bool {
-      records, sql_execute_success := sql_execute(Select, table_name, "id = $1", id);
+      with_id: WithId;
+      with_id.args[0] = id;
+
+      records, sql_execute_success := sql_execute(Select, table_name, with_id);
       if !sql_execute_success return null, false;
       if records.count == 0 return null, false;
 
