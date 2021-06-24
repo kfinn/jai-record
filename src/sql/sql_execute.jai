@@ -27,7 +27,7 @@ to_string :: (select: string, from: string, where: *SqlWhere) -> string {
   return builder_to_string(*string_builder);
 }
 
-sql_execute :: (_s: $Select/SqlSelect, sql_from: string, where: *SqlWhere = null) -> []Select.Record, success: bool {
+sql_execute :: (_s: $Select, sql_from: string, where: *SqlWhere) -> []Select.Record, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return Select.Record.[], false;
 
@@ -40,34 +40,36 @@ sql_execute :: (_s: $Select/SqlSelect, sql_from: string, where: *SqlWhere = null
   return results, true;
 }
 
-// this test still doesn't pass, not sure why
-// sql_execute_test :: () {
-//   UserWithUppercaseEmail :: struct {
-//     user_id: int; @SqlExpression(users.id)
-//     uppercase_email: string; @SqlExpression(upper(users.email))
-//   }
+sql_execute_test :: () {
+  UserWithUppercaseEmail :: struct {
+    user_id: int; @SqlExpression(users.id)
+    uppercase_email: string; @SqlExpression(upper(users.email))
+  }
 
-//   Select :: #run sql_select(UserWithUppercaseEmail);
+  Select :: #run sql_select(UserWithUppercaseEmail);
 
-//   _s: Select;
-//   actual, success := sql_execute(_s, "users");
-//   assert(success);
+  UnconditionalWhere :: SqlWhere(SQL_EXPRESSION="TRUE", ARGS_COUNT=0);
+  where: UnconditionalWhere;
 
-//   expected := UserWithUppercaseEmail.[
-//     UserWithUppercaseEmail.{
-//       user_id=2,
-//       uppercase_email="ANOTHER@EMAIL.EDU"
-//     },
-//     UserWithUppercaseEmail.{
-//       user_id=1,
-//       uppercase_email="SOMEONE@EMAIL.ORG"
-//     }
-//   ];
+  _s: Select;
+  actual, success := sql_execute(_s, "users", *where);
+  assert(success);
 
-//   assert(expected.count == actual.count);
-//   for expected, expected_index: expected {
-//     // TODO: seems like psql ints don't work correctly at compile time, but are fine at run time
-//     // assert(expected.user_id == actual[expected_index].user_id, "expected: %, actual: %", expected.user_id, actual[expected_index].user_id);
-//     assert(expected.uppercase_email == actual[expected_index].uppercase_email, "expected: %, actual: %", expected.uppercase_email, actual[expected_index].uppercase_email);
-//   }
-// } @Test;
+  expected := UserWithUppercaseEmail.[
+    .{
+      user_id=2,
+      uppercase_email="ANOTHER@EMAIL.EDU"
+    },
+    .{
+      user_id=1,
+      uppercase_email="SOMEONE@EMAIL.ORG"
+    }
+  ];
+
+  assert(expected.count == actual.count);
+  for expected, expected_index: expected {
+    // TODO: seems like psql ints don't work correctly at compile time, but are fine at run time
+    // assert(expected.user_id == actual[expected_index].user_id, "expected: %, actual: %", expected.user_id, actual[expected_index].user_id);
+    assert_equals(expected.uppercase_email, actual[expected_index].uppercase_email);
+  }
+} @Test;
