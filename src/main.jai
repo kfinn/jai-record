@@ -1,6 +1,6 @@
 #import "Basic";
 
-#load "../vendor/jai-postgres/module.jai";
+#import "jai-postgres";
 
 #load "repo.jai";
 #load "repos/users_repo.jai";

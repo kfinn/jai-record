@@ -11,6 +11,10 @@
   target_workspace_options := get_build_options();
   target_workspace_options.output_type = .EXECUTABLE;
   target_workspace_options.output_executable_name = "jai-record";
+  import_path: [..] string;
+  array_add(*import_path, ..target_workspace_options.import_path);
+  array_add(*import_path, "vendor");
+  target_workspace_options.import_path = import_path;
   set_build_options(target_workspace_options, target_workspace);
 
   compiler_begin_intercept(target_workspace);
