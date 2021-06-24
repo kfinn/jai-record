@@ -1,0 +1,6 @@
+Hi! I've encountered the same compiler crash a couple of times now, and I have a small program that can consistently repro it.
+
+It seems to stem from embedding a `#run` inside of a polymorphic type declaration of a return value. I'm attaching an example program, with its compiler error log. I also asked about this pattern in the secret beta discord.
+
+--
+Kevin Finn

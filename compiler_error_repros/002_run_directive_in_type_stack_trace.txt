@@ -1,0 +1,28 @@
+root@5c5a7c5433f3:/workspace# jai-linux compiler_error_repros/002_run_directive_in_type.jai
+Error: Jai encountered an exception running the program and is terminating.
+
+This happened outside compile-time execution, so it is likely the compiler's fault.
+
+Stack trace of the compiler:
+
+
+Stack trace:
+jai-linux(+0x592778) [0x561df4f92778]
+jai-linux(+0x592a05) [0x561df4f92a05]
+/lib/x86_64-linux-gnu/libpthread.so.0(+0x153c0) [0x7f34edb983c0]
+jai-linux(_ZN16Bytecode_Builder27emit_struct_dereference_newEP19Ast_Binary_Operator13LR_Value_TypeP15Value_Placement+0x5b) [0x561df4f6fc1b]
+jai-linux(_ZN16Bytecode_Builder15emit_expressionEP3AstS1_P15Value_Placement+0xdfe) [0x561df4f6dc0e]
+jai-linux(_ZN16Bytecode_Builder28emit_hardened_procedure_callEP19Ast_Type_DefinitionP3AstRK5ArrayIS3_Lb0EEijS3_P15Value_Placement+0x1ac) [0x561df4f74d4c]
+jai-linux(_ZN16Bytecode_Builder19emit_procedure_callEP18Ast_Procedure_CallP15Value_Placement+0x380) [0x561df4f75d30]
+jai-linux(_ZN16Bytecode_Builder15emit_expressionEP3AstS1_P15Value_Placement+0x7be) [0x561df4f6d5ce]
+jai-linux(_ZN16Bytecode_Builder14emit_statementEP3Ast+0x7b) [0x561df4f6df9b]
+jai-linux(_ZN16Bytecode_Builder10emit_blockEP9Ast_Blockbb+0x72) [0x561df4f6e0e2]
+jai-linux(_ZN16Bytecode_Builder5buildEP10Ast_LambdaP6Queued+0x748) [0x561df4f76bf8]
+jai-linux(_ZN10Jai_Interp14build_bytecodeEv+0x31f) [0x561df4ffc74f]
+jai-linux(_ZN10Jai_Interp10flow_pipesEb+0x115) [0x561df4ffd1d5]
+jai-linux(_Z13compiler_pumpP10Jai_Interpb+0xf0) [0x561df5006910]
+jai-linux(_Z20do_compilation_cycleP10Jai_Interpb+0x38) [0x561df50086a8]
+jai-linux(_Z21start_async_workspacePv+0x93) [0x561df5008913]
+jai-linux(_Z16thread_middlemanPv+0x16) [0x561df505c736]
+/lib/x86_64-linux-gnu/libpthread.so.0(+0x9609) [0x7f34edb8c609]
+/lib/x86_64-linux-gnu/libc.so.6(clone+0x43) [0x7f34ed73f293]

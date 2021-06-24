@@ -1,6 +1,4 @@
-SqlSelect :: struct($SQL_EXPRESSION: string, $Record: Type) {
-  record: Record;
-}
+SqlSelect :: struct($SQL_EXPRESSION: string, $Record: Type) {}
 
 sql_select :: ($Record: Type) -> Type {
   sql_expression :: #run () -> string {

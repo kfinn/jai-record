@@ -1,0 +1,9 @@
+Hi, I've got one more compiler error for the day. I'm less convinced this one is an error, it might just be unsupported syntax. But its error message is especially unhelpful.
+
+When I declare the return type of a procedure as the result of calling another procedure, I get a confusing error message "Expected a Type here, but got an expression whose type was not Type (its type is Type)."
+
+Maybe this just isn't a valid place to put a procedure call? But the error message isn't very helpful.
+
+I'm attaching an example program and its compiler output.
+
+Thanks!

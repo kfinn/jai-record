@@ -1,0 +1,7 @@
+Hi! I've got another compiler bug to report. When passing a polymorphic type to an argument to a function, where I care about the polymorphic values in that type, the compiler crashes. If I instead pass a value of that type, the compiler is happy. But that feels like a hack.
+
+This might not be well aligned with the spirit of the type system, but it seems like it shouldn't be a compiler crash.
+
+I've attached a repro, an example of the hacky solution I've used to get around this compiler crash, and a stack trace.
+
+Thanks!

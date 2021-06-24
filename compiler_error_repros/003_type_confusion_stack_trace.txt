@@ -1,0 +1,24 @@
+root@5c5a7c5433f3:/workspace# jai-linux compiler_error_repros/003_type_confusion.jai
+Error: Jai encountered an exception running the program and is terminating.
+
+This happened outside compile-time execution, so it is likely the compiler's fault.
+
+Stack trace of the compiler:
+
+
+Stack trace:
+jai-linux(+0x592778) [0x560e4c792778]
+jai-linux(+0x592a05) [0x560e4c792a05]
+/lib/x86_64-linux-gnu/libpthread.so.0(+0x153c0) [0x7f72c00443c0]
+jai-linux(_Z69resolve_constant_expression_to_type_or_return_null_if_we_should_yieldP10Jai_InterpP15Ast_Scope_EntryP3AstP6Queued+0x23) [0x560e4c784733]
+jai-linux(_ZN5Typer11infer_typesEP3Ast+0x2d63) [0x560e4c830d83]
+jai-linux(_ZN5Typer11infer_typesEP6Queued+0xbe) [0x560e4c837dbe]
+jai-linux(+0x5faef1) [0x560e4c7faef1]
+jai-linux(_ZN10Jai_Interp11infer_typesEv+0x9e) [0x560e4c7fbcde]
+jai-linux(_ZN10Jai_Interp10flow_pipesEb+0x57) [0x560e4c7fd117]
+jai-linux(_Z13compiler_pumpP10Jai_Interpb+0xf0) [0x560e4c806910]
+jai-linux(_Z20do_compilation_cycleP10Jai_Interpb+0x38) [0x560e4c8086a8]
+jai-linux(_Z21start_async_workspacePv+0x93) [0x560e4c808913]
+jai-linux(_Z16thread_middlemanPv+0x16) [0x560e4c85c736]
+/lib/x86_64-linux-gnu/libpthread.so.0(+0x9609) [0x7f72c0038609]
+/lib/x86_64-linux-gnu/libc.so.6(clone+0x43) [0x7f72bfbeb293]

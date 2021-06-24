@@ -1,0 +1,7 @@
+root@5c5a7c5433f3:/workspace# jai-linux compiler_error_repros/004_procedure_return_type_defined_by_another_procedure.jai
+
+In workspace #2 ("Target Program"):
+/workspace/compiler_error_repros/004_procedure_return_type_defined_by_another_procedure.jai:9,29: Error: Expected a Type here, but got an expression whose type was not Type (its type is Type).
+
+    }
+    wrap :: (value: $ToWrap) -> derive_wrapped(ToWrap) {
