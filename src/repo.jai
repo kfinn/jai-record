@@ -38,7 +38,7 @@ repo :: ($table_name: string, $Record: Type) -> Type {
 
       _s: Select;
 
-      records, sql_execute_success := sql_execute(_s, table_name, with_id);
+      records, sql_execute_success := sql_execute(_s, table_name, *with_id);
       if !sql_execute_success return null, false;
       if records.count == 0 return null, false;
 
