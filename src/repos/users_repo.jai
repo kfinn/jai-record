@@ -1,23 +1,8 @@
-UsersRepo :: #run repo(
-  "users", 
-  SqlSelection.{
-    name="id",
-    type=int,
-    expression="id"
-  },
-  SqlSelection.{
-    name="created_at",
-    type=time_t,
-    expression="created_at"
-  },
-  SqlSelection.{
-    name="updated_at",
-    type=time_t,
-    expression="updated_at"
-  },
-  SqlSelection.{
-    name="email",
-    type=string,
-    expression="email"
-  },
-);
+User :: struct {
+  id: int;
+  created_at: time_t;
+  updated_at: time_t;
+  email: string;
+}
+
+UsersRepo :: #run repo("users", User);

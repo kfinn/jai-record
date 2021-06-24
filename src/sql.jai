@@ -4,11 +4,11 @@ SqlWhere :: struct($SQL_EXPRESSION: string, ARGS_COUNT: int) {
   args: [ARGS_COUNT]Any;
 }
 
-to_string :: ($select: Type, from: string, wheres: []SqlWhere) -> string {
+to_string :: (select: string, from: string, wheres: []SqlWhere) -> string {
   string_builder: String_Builder;
   defer free_buffers(*string_builder);
 
-  print_to_builder(*string_builder, "SELECT % ", select.SQL_EXPRESSION);
+  print_to_builder(*string_builder, "SELECT % ", select);
   print_to_builder(*string_builder, "FROM % ", from);
 
   next_placeholder_index := 1;
@@ -38,11 +38,11 @@ to_string :: ($select: Type, from: string, wheres: []SqlWhere) -> string {
   return builder_to_string(*string_builder);
 }
 
-sql_execute :: ($Select: Type, sql_from: string, wheres: ..SqlWhere) -> []Select, success: bool {
+sql_execute :: (_s: $Select/SqlSelect, sql_from: string, wheres: ..SqlWhere) -> []Select.Record, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
-  if !jai_record_pg_connection_success return Select.[], false;
+  if !jai_record_pg_connection_success return Select.Record.[], false;
 
-  expression_string := to_string(Select, sql_from, wheres);
+  expression_string := to_string(Select.SQL_EXPRESSION, sql_from, wheres);
 
   args: [..]Any;
   defer array_reset(*args);
@@ -53,8 +53,8 @@ sql_execute :: ($Select: Type, sql_from: string, wheres: ..SqlWhere) -> []Select
     }
   }
 
-  results, execute_success := execute(connection, Select, expression_string, ..args);
-  if !execute_success return Select.[], false;
+  results, execute_success := execute(connection, Select.Record, expression_string, ..args);
+  if !execute_success return Select.Record.[], false;
   return results, true;
 }
 
@@ -95,70 +95,67 @@ sql_execute :: ($Select: Type, sql_from: string, wheres: ..SqlWhere) -> []Select
 //   }
 // } @Test;
 
-SqlSelection :: struct {
-  name: string;
-  type: Type;
-  expression: string;
-};
+SqlSelect :: struct($SQL_EXPRESSION: string, $Record: Type) {
+  record: Record;
+}
 
-sql_select :: ($sql_selections: .. SqlSelection) -> Type {
-  #insert #run () -> string {
-    type_string_builder: String_Builder;
-    defer free_buffers(*type_string_builder);
-
+sql_select :: ($Record: Type) -> Type {
+  sql_expression :: #run () -> string {
     sql_expression_builder: String_Builder;
     defer free_buffers(*sql_expression_builder);
 
-    print_to_builder(*type_string_builder, "return struct {\n");
+    record_type_info := type_info(Record);
 
-    for sql_selections {
-      print_to_builder(*type_string_builder, "  %: %;\n", it.name, it.type);
-      print_to_builder(*sql_expression_builder, "(%) as %", it.expression, it.name);
-      if it_index < sql_selections.count - 1 print_to_builder(*sql_expression_builder, ", ");
+    for member, member_index: record_type_info.members {
+      sql_expression_note: string;
+      SQL_EXPRESSION_NOTE_PREFIX :: "SqlExpression(";
+      SQL_EXPRESSION_NOTE_SUFFIX :: ")";
+
+      for note: member.notes {
+        if !has_prefix(note, SQL_EXPRESSION_NOTE_PREFIX) continue;
+        if !has_suffix(note, SQL_EXPRESSION_NOTE_SUFFIX) continue;
+
+        sql_expression_note = note;
+      }
+
+      member_sql_expression: string;
+      if sql_expression_note {
+        slice_start_index :: SQL_EXPRESSION_NOTE_PREFIX.count;
+        slice_end_index := sql_expression_note.count - SQL_EXPRESSION_NOTE_SUFFIX.count - 1;
+
+        member_sql_expression_source := slice(
+          sql_expression_note,
+          slice_start_index,
+          slice_end_index
+        );
+
+        member_sql_expression = sprint("(%) as %", member_sql_expression_source, member.name);
+      } else {
+        member_sql_expression = sprint("\"%\"", member.name);
+      }
+      print_to_builder(*sql_expression_builder, "%", member_sql_expression);
+      if member_index < record_type_info.members.count - 1 {
+        print_to_builder(*sql_expression_builder, ", ");
+      }
     }
 
-    print_to_builder(*type_string_builder, "  SQL_EXPRESSION :: \"%\";\n", builder_to_string(*sql_expression_builder));
-
-    print_to_builder(*type_string_builder, "};\n");
-    return builder_to_string(*type_string_builder);
+    return builder_to_string(*sql_expression_builder);
   }();
+
+  return SqlSelect(SQL_EXPRESSION=sql_expression, Record=Record);
 };
 
-sql_select_type_test :: () {
-  actual :: #run sql_select(
-    SqlSelection.{
-      name="user_id",
-      type=int,
-      expression="users.id"
-    },
-    SqlSelection.{
-      name="uppercase_email",
-      type=string,
-      expression="upper(users.email)"
-    }
-  );
-
-  expected :: struct {
-    user_id: int;
-    uppercase_email: string;
-    SQL_EXPRESSION :: "(users.id) as user_id, (upper(users.email)) as uppercase_email";
-  };
-
-  expected_info := type_info(expected);
-  actual_info := type_info(actual);
-
-  for expected_member: expected_info.members {
-    matches := false;
-    for actual_member: actual_info.members {
-      if (
-        actual_member.name == expected_member.name &&
-        actual_member.type == expected_member.type
-      ) {
-          matches = true;
-          break;
-        }
-    }
-    assert(matches, "expected (%) member to be present in (%)", expected_member, actual_info.members);
-    assert(expected.SQL_EXPRESSION == actual.SQL_EXPRESSION); 
+sql_select_test :: () {
+  SomeRecord :: struct {
+    id: int;
+    name: string;
+    uppercase_email: string; @SqlExpression(upper(email))
   }
+
+  actual :: #run sql_select(SomeRecord);
+
+  assert(actual.Record == SomeRecord);
+  assert_equals(
+    "\"id\", \"name\", (upper(email)) as uppercase_email", actual.SQL_EXPRESSION
+  );
 } @Test;
