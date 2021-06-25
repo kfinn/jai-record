@@ -23,22 +23,31 @@ test_sql_delete_execute :: () {
   id, insert_success := sql_insert_execute("users", *user_to_insert);
   assert(insert_success);
 
+  with_id: WithId;
+  with_id.args[0] = id;
+
+  // select count(*) from users where id = ?;
+
+  CountSelect :: #run sql_select(struct {
+    users_count: int; @SqlExpression(count(*))
+  });
+  _s: CountSelect;
+
   {
-    user := UsersRepo.find(id);
-    assert_equals("test@email.edu", user.email);
+    count_results, success := sql_select_execute(_s, "users", *with_id);
+    assert(success);
+    assert_equals(count_results.count, 1);
+    assert_equals(count_results[0].users_count, 1);
   }
-
   {
-    with_id: WithId;
-    with_id.args[0] = id;
-
     delete_success := sql_delete_execute("users", *with_id);
     assert(delete_success);
   }
 
   {
-    user, success := UsersRepo.find(id);
-    assert(!success);
-    assert_equals(null, user);
+    count_results, success := sql_select_execute(_s, "users", *with_id);
+    assert(success);
+    assert_equals(count_results.count, 1);
+    assert_equals(count_results[0].users_count, 0);
   }
 } @Test;
