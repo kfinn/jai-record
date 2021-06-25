@@ -8,11 +8,12 @@
 #load "repos/todos_repo.jai";
 
 #load "sql.jai";
-#load "sql/sql_select.jai";
-#load "sql/sql_execute.jai";
-#load "sql/sql_where.jai";
-#load "sql/sql_insert.jai";
 #load "sql/sql_delete.jai";
+#load "sql/sql_execute.jai";
+#load "sql/sql_insert.jai";
+#load "sql/sql_select.jai";
+#load "sql/sql_update.jai";
+#load "sql/sql_where.jai";
 
 #load "strings.jai";
 #load "assertions.jai";
