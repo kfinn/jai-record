@@ -46,3 +46,21 @@ slice_test :: () {
   assert(slice("hi", 0, 0) == "h");
   assert(slice("booooooo", 0, 2) == "boo");
 } @Test;
+
+join :: (components: []string, joiner: string = ", ") -> string {
+  result_builder: String_Builder;
+  defer free_buffers(*result_builder);
+
+  for components {
+    print_to_builder(*result_builder, it);
+    if it_index < components.count - 1 print_to_builder(*result_builder, joiner);
+  }
+
+  return builder_to_string(*result_builder);
+}
+
+join_test :: () {
+  components :: string.["hello", "to", "all", "my", "viewers"];
+  assert_equals("hello, to, all, my, viewers", join(components));
+  assert_equals("hello banana to banana all banana my banana viewers", join(components, " banana "));
+} @Test;

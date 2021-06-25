@@ -1,3 +1,4 @@
+#import "Compiler";
 #import "Basic";
 
 #import "jai-postgres";
@@ -10,6 +11,7 @@
 #load "sql/sql_select.jai";
 #load "sql/sql_execute.jai";
 #load "sql/sql_where.jai";
+#load "sql/sql_insert.jai";
 
 #load "strings.jai";
 #load "assertions.jai";
