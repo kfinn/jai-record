@@ -27,7 +27,7 @@ to_string :: (select: string, from: string, where: *SqlWhere) -> string {
   return builder_to_string(*string_builder);
 }
 
-sql_execute :: (_s: $Select, sql_from: string, where: *SqlWhere) -> []Select.Record, success: bool {
+sql_select_execute :: (_s: $Select, sql_from: string, where: *SqlWhere) -> []Select.Record, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return Select.Record.[], false;
 
@@ -40,7 +40,7 @@ sql_execute :: (_s: $Select, sql_from: string, where: *SqlWhere) -> []Select.Rec
   return results, true;
 }
 
-sql_execute_test :: () {
+sql_select_execute_test :: () {
   UserWithUppercaseEmail :: struct {
     user_id: int; @SqlExpression(users.id)
     uppercase_email: string; @SqlExpression(upper(users.email))
@@ -52,7 +52,7 @@ sql_execute_test :: () {
   where: WhereIdsInFixtureData;
 
   _s: Select;
-  actual, success := sql_execute(_s, "users", *where);
+  actual, success := sql_select_execute(_s, "users", *where);
   assert(success);
 
   expected := UserWithUppercaseEmail.[

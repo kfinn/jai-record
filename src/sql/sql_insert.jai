@@ -50,23 +50,29 @@ sql_insert :: ($InsertableFields: Type, $IdType: Type) -> Type {
   );
 }
 
-sql_execute :: (into: string, insert: *$Insert) -> success: bool {
+sql_insert_execute :: (into: string, insert: *$Insert) -> id: Insert.IdType, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
-  if !jai_record_pg_connection_success return false;
+  if !jai_record_pg_connection_success return 0, false;
 
-  expression_string := sprint("INSERT INTO % %;", into, Insert.SQL_EXPRESSION);
+  expression_string := sprint("INSERT INTO % % RETURNING id;", into, Insert.SQL_EXPRESSION);
 
   args := Insert.to_sql_insert_args(insert);
   defer array_free(args);
 
-  execute_success := execute(
+  Result :: struct {
+    id: Insert.IdType;
+  }
+
+  results, execute_success := execute(
     connection,
+    Result,
     expression_string,
     ..args
   );
 
-  if !execute_success return false;
-  return true;
+  if !execute_success return 0, false;
+  if results.count != 1 return 0, false;
+  return results[0].id, true;
 }
 
 sql_insert_test :: () {
@@ -102,13 +108,13 @@ sql_insert_test :: () {
   // assert_equals(Type_Info_Tag.INTEGER, args[2].type.type);
   // assert_equals(1234567, <<(cast(*int)args[2].value_pointer));
 
-  execute_success := sql_execute("users", *test_user_to_insert);
+  inserted_id, execute_success := sql_insert_execute("users", *test_user_to_insert);
   assert(execute_success);
 
-  // found_user, find_success := TestUsersRepo.find(inserted_id);
-  // assert(find_success);
+  found_user, find_success := TestUsersRepo.find(inserted_id);
+  assert(find_success);
 
-  // assert_equals("some@email.gov", found_user.email);
+  assert_equals("some@email.gov", found_user.email);
   // assert_equals(12345, found_user.created_at);
   // assert_equals(1234567, found_user.updated_at);
 } @Test;
