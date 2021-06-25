@@ -12,6 +12,7 @@
 #load "sql/sql_execute.jai";
 #load "sql/sql_where.jai";
 #load "sql/sql_insert.jai";
+#load "sql/sql_delete.jai";
 
 #load "strings.jai";
 #load "assertions.jai";
@@ -70,5 +71,15 @@ main :: () {
     } else {
       print("success: false, todo: %\n", todo);
     }
+  }
+
+  {
+    id_not_included_in_fixtures: SqlWhere(
+      SQL_EXPRESSION="id > ?",
+      ARGS_COUNT=1
+    );
+    id_not_included_in_fixtures.args[0] = 2;
+
+    sql_delete_execute("users", *id_not_included_in_fixtures);
   }
 }

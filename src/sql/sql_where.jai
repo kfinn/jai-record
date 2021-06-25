@@ -1,3 +1,41 @@
+to_string :: (where: *SqlWhere) -> string {
+  if where == null return "";
+  
+  string_builder: String_Builder;
+  defer free_buffers(*string_builder);
+
+  next_placeholder_index := 1;
+  PLACEHOLDER :: #char "?";
+  for character_index: 0..(where.SQL_EXPRESSION.count - 1) {
+    character := where.SQL_EXPRESSION[character_index];
+    if character == PLACEHOLDER {
+      print_to_builder(*string_builder, "$%", next_placeholder_index);
+      next_placeholder_index = next_placeholder_index + 1;
+    } else {
+      single_character_string := sprint("_");
+      single_character_string.data[0] = character;
+      print_to_builder(*string_builder, "%", single_character_string);
+    }
+  }
+
+  return builder_to_string(*string_builder);
+}
+
+sql_where_to_string_test :: () {
+  test_sql_where: SqlWhere(
+    SQL_EXPRESSION="id = ? AND another_thing = ? AND some_id = ?",
+    ARGS_COUNT=3
+  );
+  test_sql_where.args[0] = 12;
+  test_sql_where.args[1] = "charlie";
+  test_sql_where.args[2] = 123;
+
+  assert_equals(
+    "id = $1 AND another_thing = $2 AND some_id = $3",
+    to_string(*test_sql_where)
+  );
+} @Test;
+
 SqlWhere :: struct($SQL_EXPRESSION: string, ARGS_COUNT: int) {
   args: [ARGS_COUNT]Any;
 }

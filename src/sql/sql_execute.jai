@@ -5,23 +5,9 @@ to_string :: (select: string, from: string, where: *SqlWhere) -> string {
   print_to_builder(*string_builder, "SELECT % ", select);
   print_to_builder(*string_builder, "FROM % ", from);
 
-  next_placeholder_index := 1;
-  PLACEHOLDER :: #char "?";
-
-  if where != null {
-    print_to_builder(*string_builder, "WHERE ");
-    for character_index: 0..(where.SQL_EXPRESSION.count - 1) {
-      character := where.SQL_EXPRESSION[character_index];
-      if character == PLACEHOLDER {
-        print_to_builder(*string_builder, "$%", next_placeholder_index);
-        next_placeholder_index = next_placeholder_index + 1;
-      } else {
-        single_character_string := sprint("_");
-        single_character_string.data[0] = character;
-        print_to_builder(*string_builder, "%", single_character_string);
-      }
-    }
-    print_to_builder(*string_builder, " ");
+  where_string := to_string(where);
+  if where_string != "" {
+    print_to_builder(*string_builder, "WHERE % ", where_string);
   }
 
   return builder_to_string(*string_builder);

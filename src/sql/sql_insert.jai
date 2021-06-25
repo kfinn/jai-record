@@ -76,15 +76,6 @@ sql_insert_execute :: (into: string, insert: *$Insert) -> id: Insert.IdType, suc
 }
 
 sql_insert_test :: () {
-  TestUser :: struct {
-    id: int;
-    email: string;
-    // created_at: time_t;
-    // updated_at: time_t;
-  }
-
-  TestUsersRepo :: #run repo("users", TestUser);
-
   TestUserInsert :: #run sql_insert(struct {
     email: string;
     // created_at: time_t;
@@ -111,7 +102,7 @@ sql_insert_test :: () {
   inserted_id, execute_success := sql_insert_execute("users", *test_user_to_insert);
   assert(execute_success);
 
-  found_user, find_success := TestUsersRepo.find(inserted_id);
+  found_user, find_success := UsersRepo.find(inserted_id);
   assert(find_success);
 
   assert_equals("some@email.gov", found_user.email);
