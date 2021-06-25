@@ -26,8 +26,6 @@ test_sql_delete_execute :: () {
   with_id: WithId;
   with_id.args[0] = id;
 
-  // select count(*) from users where id = ?;
-
   CountSelect :: #run sql_select(struct {
     users_count: int; @SqlExpression(count(*))
   });
