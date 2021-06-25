@@ -3,12 +3,9 @@ sql_delete_execute :: (from: string, where: *SqlWhere) -> success: bool {
   if !jai_record_pg_connection_success return false;
 
   command := sprint("DELETE FROM \"%\" WHERE %;", from, to_string(where));
-  print("delete command: %\n", command);
 
   args: []Any;
   if where != null args = where.args;
-  print("delete args\n");
-  for args print("type: %, value: %\n", <<it.type, <<((cast(*int)it.value_pointer)));
   return execute(connection, command, ..args);
 }
 
