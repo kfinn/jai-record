@@ -1,6 +1,8 @@
 #import "Basic";
 #import "Compiler";
 
+#load "jai-spec/run.jai";
+
 #run {
   target_workspace := compiler_create_workspace("jai-record");
   if !target_workspace {
@@ -16,6 +18,8 @@
   array_add(*import_path, "/vendor");
   target_workspace_options.import_path = import_path;
   set_build_options(target_workspace_options, target_workspace);
+
+  specs_run(target_workspace);
 
   compiler_begin_intercept(target_workspace);
   add_build_file("src/main.jai", target_workspace);
