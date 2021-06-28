@@ -7,12 +7,6 @@ has_prefix :: (source: string, prefix: string) -> bool {
   return true;
 }
 
-has_prefix_test :: () {
-  assert(has_prefix("hello", "hell"));
-  assert(!has_prefix("hello", "hellllllll"));
-  assert(!has_prefix("hello", "hi"));
-} @Test;
-
 has_suffix :: (source: string, suffix: string) -> bool {
   if source.count < suffix.count return false;
 

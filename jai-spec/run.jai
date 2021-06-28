@@ -33,9 +33,18 @@ specs_run :: (workspace_under_test: Workspace) {
     add_build_file(file, specs_workspace);
   }
 
+  add_build_string("#run specs_verify();", specs_workspace);
+
   while true {
     message := compiler_wait_for_message();
-    if message.kind == .COMPLETE break;
+    if message.kind == {
+      case .ERROR;
+        compiler_report("Tests failed");
+      case .COMPLETE;
+        break;
+    }
   }
   compiler_end_intercept(specs_workspace);
+
+
 };
