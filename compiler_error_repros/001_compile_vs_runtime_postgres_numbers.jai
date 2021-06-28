@@ -1,4 +1,6 @@
-#load "../vendor/jai-postgres/module.jai";
+#import "Basic";
+
+#load "/vendor/jai-postgres/module.jai";
 
 get_connection :: () -> *PGconn, success: bool {
   connection, success := connect("postgres://postgres:password@db:5432/postgres");
@@ -9,44 +11,62 @@ get_connection :: () -> *PGconn, success: bool {
   }
 }
 
-User :: struct {
+Result :: struct {
   id: int;
 };
 
-look_up_some_id :: () -> int {
+look_up_some_number :: (query: string, args: ..Any) -> int {
   connection := get_connection();
   defer disconnect(connection);
 
-  results, success := execute(
-    connection,
-    User,
-    "SELECT 1::INT8 AS id;"
-  );
+  values: string;
+  if args.count > 0 {
+    values_builder: String_Builder;
+    defer free_buffers(*values_builder);
 
-  if !success return 0;
-  if results.count != 1 return 0;
+    print_to_builder(*values_builder, "[");
+    for args {
+      print_to_builder(*values_builder, "%", it);
+      if it_index < args.count - 1 print_to_builder(*values_builder, ", ");
+    }
+    print_to_builder(*values_builder, "]");
+    values = builder_to_string(*values_builder);
+  } else {
+    values = "[]";
+  }
+  print("query: %, %\n", query, values);
 
-  print("%\n", results[0]);
+  results, success := execute(connection, Result, query, ..args);
+
+  if !success {
+    print("!success\n");
+    return 0;
+  }
+  if results.count != 1 {
+    print("results.count != 1\n");
+    return 0;
+  }
+
+  print("result: %\n", results[0].id);
 
   return results[0].id;
 }
 
-COMPILETIME_ID :: #run look_up_some_id();
-
 main :: () {
-  nums: [1000]int;
+  look_up_some_number("select 0::smallint as id where 2 = $1", 2);
+  look_up_some_number("select 1::smallint as id where 2 = $1", 2);
+  look_up_some_number("select 2::smallint as id where 2 = $1", 2);
+  look_up_some_number("select 3::smallint as id where 2 = $1", 2);
+  look_up_some_number("select 4::smallint as id where 2 = $1", 2);
+  look_up_some_number("select $1 as id where 2 = $2", 0, 2);
+  look_up_some_number("select $1 as id where 2 = $2", 1, 2);
+  look_up_some_number("select $1 as id where 2 = $2", 2, 2);
+  look_up_some_number("select $1 as id where 2 = $2", 3, 2);
+  look_up_some_number("select $1 as id where 2 = $2", 4, 2);
 
-  runtime_id_1 := look_up_some_id();
-  runtime_id_2 := look_up_some_id();
-  runtime_id_3 := look_up_some_id();
-  runtime_id_4 := look_up_some_id();
-  runtime_id_5 := look_up_some_id();
-
-  print("compiletime ID: %, runtime ID: %\n", COMPILETIME_ID, runtime_id_1);
-
-  print("runtime ID 1: %\n", runtime_id_1);
-  print("runtime ID 2: %\n", runtime_id_2);
-  print("runtime ID 3: %\n", runtime_id_3);
-  print("runtime ID 4: %\n", runtime_id_4);
-  print("runtime ID 5: %\n", runtime_id_5);
+  look_up_some_number("select id from users where id = $1", 1);
+  look_up_some_number("select id from users where id = 1");
+  look_up_some_number("select id from users where id = 321321321");
 }
+
+#run main();

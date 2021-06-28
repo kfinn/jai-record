@@ -1,5 +1,6 @@
 SqlUpdate :: struct(
   $SQL_EXPRESSION: string,
+  $ARGS_COUNT: int,
   $UpdatableFields: Type,
   $to_sql_update_args: (updatable_fields: *UpdatableFields) -> []Any
 ) {
@@ -24,7 +25,9 @@ sql_update :: ($UpdatableFields: Type) -> Type {
     return builder_to_string(*sql_expression_builder);
   }();
 
-  // copypasta from ./sql_insert.jai
+  ARGS_COUNT ::  #run type_info(UpdatableFields).members.count;
+
+  // TODO: clean up copypasta from ./sql_insert.jai
   to_sql_update_args :: (updatable_fields: *UpdatableFields) -> [..]Any {
     #insert #run () -> string {
       builder: String_Builder;
@@ -42,14 +45,17 @@ sql_update :: ($UpdatableFields: Type) -> Type {
     }();
   };
 
+
+
   return SqlUpdate(
     SQL_EXPRESSION=SQL_EXPRESSION,
+    ARGS_COUNT=ARGS_COUNT,
     UpdatableFields=UpdatableFields,
     to_sql_update_args=to_sql_update_args
   );
 }
 
-sql_update_execute :: (table_name: string, update: *$Update, where: *SqlWhere) -> success: bool {
+sql_update_execute :: (table_name: string, update: *$Update, where: *$SqlWhere) -> success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return false;
 
@@ -67,12 +73,11 @@ sql_update_execute :: (table_name: string, update: *$Update, where: *SqlWhere) -
   expression_string_with_placeholders := builder_to_string(*expression_string_builder);
   expression_string := prepare_sql_placeholders_for_args(expression_string_with_placeholders);
 
-  args: [..]Any;
-  defer array_reset(*args);
+  args: [Update.ARGS_COUNT + SqlWhere.ARGS_COUNT]Any;
 
-  for Update.to_sql_update_args(update) array_add(*args, it);
+  for Update.to_sql_update_args(update) args[it_index] = it;
   if where != null {
-    for where.args array_add(*args, it);
+    for where.args args[Update.ARGS_COUNT + it_index] = it;
   }
 
   return execute(
@@ -108,14 +113,14 @@ test_sql_update_execute :: () {
   with_id: WithId;
   with_id.args[0] = id;
 
-  // sql_update_execute(
-  //   "users",
-  //   *updated_user,
-  //   *with_id
-  // );
+  sql_update_execute(
+    "users",
+    *updated_user,
+    *with_id
+  );
 
-  // {
-  //   user := UsersRepo.find(id);
-  //   assert_equals("some_new@email.org", user.email);
-  // }
+  {
+    user := UsersRepo.find(id);
+    assert_equals("some_new@email.org", user.email);
+  }
 } @Test;
