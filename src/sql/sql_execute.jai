@@ -89,7 +89,7 @@ sql_select_execute_test :: () {
   assert(expected.count == actual.count);
   for expected, expected_index: expected {
     // TODO: seems like psql ints don't work correctly at compile time, but are fine at run time
-    // assert(expected.user_id == actual[expected_index].user_id, "expected: %, actual: %", expected.user_id, actual[expected_index].user_id);
+    // assert_equals(expected.user_id, actual[expected_index].user_id);
     included := false;
     for actual: actual {
       if expected.uppercase_email == actual.uppercase_email included = true;
