@@ -39,9 +39,3 @@ join :: (components: []string, joiner: string = ", ") -> string {
 
   return builder_to_string(*result_builder);
 }
-
-join_test :: () {
-  components :: string.["hello", "to", "all", "my", "viewers"];
-  assert_equals("hello, to, all, my, viewers", join(components));
-  assert_equals("hello banana to banana all banana my banana viewers", join(components, " banana "));
-} @Test;

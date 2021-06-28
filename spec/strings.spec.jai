@@ -33,5 +33,26 @@
     it("asserts when the range start is less than 0", #code {
       expect(#code { slice("hi", -1, 1); }, to_assert());
     });
+    it("asserts when the range end is less than the start", #code {
+      expect(#code { slice("hello hello", 2, 0); }, to_assert());
+    });
+    it("asserts when the range end is greater than the string length", #code {
+      expect(#code { slice("hello hello", 2, 11); }, to_assert());
+    });
+  });
+
+  describe("join", #code {
+    it("joins components with a comma when no joiner is specified", #code {
+      expect(
+        join(string.["hello", "to", "all", "my", "viewers"]),
+        to_equal("hello, to, all, my, viewers")
+      );
+    });
+    it("joins components using a specified joiner", #code {
+      expect(
+        join(string.["hello", "to", "all", "my", "viewers"], " banana "),
+        to_equal("hello banana to banana all banana my banana viewers")
+      );
+    });
   });
 });
