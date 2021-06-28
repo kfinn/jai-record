@@ -30,10 +30,9 @@ test_sql_delete_execute :: () {
   CountSelect :: #run sql_select(struct {
     users_count: int; @SqlExpression(count(*))
   });
-  _s: CountSelect;
 
   {
-    count_results, success := sql_select_execute(_s, "users", *with_id);
+    count_results, success := sql_select_execute(CountSelect, "users", *with_id);
     assert(success);
     assert_equals(count_results.count, 1);
     assert_equals(count_results[0].users_count, 1);
@@ -44,7 +43,7 @@ test_sql_delete_execute :: () {
   }
 
   {
-    count_results, success := sql_select_execute(_s, "users", *with_id);
+    count_results, success := sql_select_execute(CountSelect, "users", *with_id);
     assert(success);
     assert_equals(count_results.count, 1);
     assert_equals(count_results[0].users_count, 0);

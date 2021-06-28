@@ -47,7 +47,7 @@ to_string :: (select: string, from: string, where: *SqlWhere) -> string {
   return builder_to_string(*string_builder);
 }
 
-sql_select_execute :: (_s: $Select, sql_from: string, where: *SqlWhere) -> []Select.Record, success: bool {
+sql_select_execute :: ($Select: Type, sql_from: string, where: *SqlWhere) -> []Select.Record, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return Select.Record.[], false;
 
@@ -71,8 +71,7 @@ sql_select_execute_test :: () {
   WhereIdsInFixtureData :: SqlWhere(SQL_EXPRESSION="id IN (1, 2)", ARGS_COUNT=0);
   where: WhereIdsInFixtureData;
 
-  _s: Select;
-  actual, success := sql_select_execute(_s, "users", *where);
+  actual, success := sql_select_execute(Select, "users", *where);
   assert(success);
 
   expected := UserWithUppercaseEmail.[
