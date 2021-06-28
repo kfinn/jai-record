@@ -68,8 +68,10 @@ sql_select_execute_test :: () {
 
   Select :: #run sql_select(UserWithUppercaseEmail);
 
-  WhereIdsInFixtureData :: SqlWhere(SQL_EXPRESSION="id IN (1, 2)", ARGS_COUNT=0);
+  WhereIdsInFixtureData :: SqlWhere(SQL_EXPRESSION="id IN (?, ?)", ARGS_COUNT=2);
   where: WhereIdsInFixtureData;
+  where.args[0] = 1;
+  where.args[1] = 2;
 
   actual, success := sql_select_execute(Select, "users", *where);
   assert(success);
@@ -87,8 +89,7 @@ sql_select_execute_test :: () {
 
   assert(expected.count == actual.count);
   for expected, expected_index: expected {
-    // TODO: seems like psql ints don't work correctly at compile time, but are fine at run time
-    // assert_equals(expected.user_id, actual[expected_index].user_id);
+    assert_equals(expected.user_id, actual[expected_index].user_id);
     included := false;
     for actual: actual {
       if expected.uppercase_email == actual.uppercase_email included = true;

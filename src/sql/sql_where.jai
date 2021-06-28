@@ -3,19 +3,18 @@ to_string :: (where: *SqlWhere) -> string {
   return where.SQL_EXPRESSION;
 }
 
-SqlWhere :: struct($SQL_EXPRESSION: string, ARGS_COUNT: int) {
+SqlWhere :: struct($SQL_EXPRESSION: string, $ARGS_COUNT: int) {
   args: [ARGS_COUNT]Any;
 }
 
-// derived_sql_where_type :: ($LhsSqlWhere: Type, $RhsSqlWhere: Type) -> Type {
-//   return SqlWhere(
+// and :: (lhs: *$LhsSqlWhere, rhs: *$RhsSqlWhere) -> SqlWhere(
 //     SQL_EXPRESSION=sprint("((%) AND (%))", LhsSqlWhere.SQL_EXPRESSION, RhsSqlWhere.SQL_EXPRESSION),
 //     ARGS_COUNT=(LhsSqlWhere.ARGS_COUNT + RhsSqlWhere.ARGS_COUNT)
+// ) {
+//   result: SqlWhere(
+//     SQL_EXPRESSION=#run sprint("((%) AND (%))", LhsSqlWhere.SQL_EXPRESSION, RhsSqlWhere.SQL_EXPRESSION),
+//     ARGS_COUNT=(LhsSqlWhere.ARGS_COUNT + RhsSqlWhere.ARGS_COUNT)
 //   );
-// }
-
-// and :: (lhs: *$LhsSqlWhere, rhs: *$RhsSqlWhere) -> derived_sql_where_type(LhsSqlWhere, RhsSqlWhere) {
-//   result: derived_sql_where_type(LhsSqlWhere, RhsSqlWhere);
 //   for lhs.args result.args[it_index] = it;
 //   for rhs.args result.args[it_index + lhs.ARGS_COUNT] = it;
 
@@ -32,12 +31,13 @@ SqlWhere :: struct($SQL_EXPRESSION: string, ARGS_COUNT: int) {
 
 //   result := and(*with_id, *between_dates);
 
-//   assert_equals("((id = ?) AND (created_at BETWEEN ? AND ?)))", result.SQL_EXPRESSION);
+//   assert_equals("((id = ?) AND (created_at BETWEEN ? AND ?)))", type_of(result).SQL_EXPRESSION);
 //   assert_equals(result.ARGS_COUNT, 3);
-//   assert_equals(result.args[0].type, type_info(type_of(1)));
-//   assert_equals(<<(cast(*int) result.args[0].value_pointer), 1);
-//   assert_equals(result.args[1].type, type_info(type_of("2020-01-01")));
-//   assert_equals(<<(cast(*string) result.args[1].value_pointer), "2020-01-01");
-//   assert_equals(result.args[2].type, type_info(type_of("2021-01-01")));
-//   assert_equals(<<(cast(*string) result.args[0].value_pointer), "2021-01-01");
+//   print("%\n", result);
+//   // assert_equals(result.args[0].type, type_info(type_of(1)));
+//   // assert_equals(<<(cast(*int) result.args[0].value_pointer), 1);
+//   // assert_equals(result.args[1].type, type_info(type_of("2020-01-01")));
+//   // assert_equals(<<(cast(*string) result.args[1].value_pointer), "2020-01-01");
+//   // assert_equals(result.args[2].type, type_info(type_of("2021-01-01")));
+//   // assert_equals(<<(cast(*string) result.args[0].value_pointer), "2021-01-01");
 // } @Test;

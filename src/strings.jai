@@ -7,7 +7,6 @@ has_prefix :: (source: string, prefix: string) -> bool {
   return true;
 }
 
-
 has_prefix_test :: () {
   assert(has_prefix("hello", "hell"));
   assert(!has_prefix("hello", "hellllllll"));
