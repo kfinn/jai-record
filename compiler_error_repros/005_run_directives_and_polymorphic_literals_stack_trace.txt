@@ -1,0 +1,28 @@
+root@9be2dfbb85d5:/workspace# jai-linux compiler_error_repros/005_found_doing_before_each_work.jai
+
+In workspace #2 ("Target Program"):
+/workspace/compiler_error_repros/005_found_doing_before_each_work.jai:13,33: Error: Invalid type of return value from compile-time code execution! (The return value must be something the compiler can translate into a literal.)
+
+    EXTENDED_SOME_TYPE_INSTANCE :: #run extend_some_type(STATIC_SOME_TYPE_INSTANCE, "world");
+
+/workspace/compiler_error_repros/005_found_doing_before_each_work.jai:13,33: Info: (The type was SomeType(STRINGS_COUNT=2))
+
+    EXTENDED_SOME_TYPE_INSTANCE :: #run extend_some_type(STATIC_SOME_TYPE_INSTANCE, "world");
+
+Error: Jai encountered an exception running the program and is terminating.
+
+This happened outside compile-time execution, so it is likely the compiler's fault.
+
+Stack trace of the compiler:
+
+
+Stack trace:
+jai-linux() [0x6a279a]
+/lib/x86_64-linux-gnu/libpthread.so.0(+0x153c0) [0x7fdad3e6d3c0]
+jai-linux(_Z20finish_run_directiveP10Jai_InterpP17Ast_Directive_Run+0x23) [0x70fb53]
+jai-linux(_Z13compiler_pumpP10Jai_Interpb+0xb09) [0x710759]
+jai-linux(_Z20do_compilation_cycleP10Jai_Interpb+0x52) [0x711b22]
+jai-linux(_Z21start_async_workspacePv+0x98) [0x711d38]
+jai-linux(_Z16thread_middlemanPv+0x35) [0x7652b5]
+/lib/x86_64-linux-gnu/libpthread.so.0(+0x9609) [0x7fdad3e61609]
+/lib/x86_64-linux-gnu/libc.so.6(clone+0x43) [0x7fdad3a14293]

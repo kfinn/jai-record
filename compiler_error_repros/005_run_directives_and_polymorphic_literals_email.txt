@@ -1,0 +1,9 @@
+Hi,
+
+Just encountered what feels like a new compiler error (or maybe just a confusing error message), seemingly caused by the intersection of `#run` and polymorphic types.
+
+I'm able to create a constant literal of a polymorphic `SomeType`, but when I try to create one in a slightly trickier way through a `#run`, the compiler tells me the type cannot be converted to a literal.
+
+I've attached code to repro the issue and the compiler output.
+
+Thanks!
