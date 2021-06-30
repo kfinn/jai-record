@@ -2,17 +2,33 @@ ANY_FAILURES := false;
 
 #add_context did_assert_during_expect: bool = false;
 
-describe :: (name: string, body: Code) #expand {
+EMPTY_CODE :: #code {};
+
+describe :: (
+  name: string,
+  body: Code,
+  before_all: Code = EMPTY_CODE,
+  after_all: Code = EMPTY_CODE
+) #expand {
   description := name;
   describe :: nested_describe;
 
+  if before_all != EMPTY_CODE #insert before_all;
   #insert_internal body;
+  if after_all != EMPTY_CODE #insert after_all;
 }
 
-nested_describe :: (description_suffix: string, body: Code) #expand {
+nested_describe :: (
+  description_suffix: string,
+  body: Code,
+  before_all: Code = EMPTY_CODE,
+  after_all: Code = EMPTY_CODE
+) #expand {
   description := sprint("% %", `description, description_suffix);
 
+  if before_all != EMPTY_CODE #insert before_all;
   #insert_internal body;
+  if after_all != EMPTY_CODE #insert after_all;
 }
 
 it :: (description_suffix: string, body: Code) #expand {
