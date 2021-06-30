@@ -20,10 +20,17 @@
 
 main :: () {
   {
+    all_users, success := UsersRepo.all();
+    if success {
+      print("success: true, users: %\n", all_users);
+    } else {
+      print("success: false, users: %\n", all_users);
+    }
+  }
+  {
     user, success := UsersRepo.find(1);
     if success {
       print("success: true, user: %\n", <<user);
-      free(user);
     } else {
       print("success: false, user: %\n", user);
     }
@@ -32,7 +39,6 @@ main :: () {
     user, success := UsersRepo.find(2);
     if success {
       print("success: true, user: %\n", <<user);
-      free(user);
     } else {
       print("success: false, user: %\n", user);
     }
@@ -41,7 +47,6 @@ main :: () {
     user, success := UsersRepo.find(3);
     if success {
       print("success: true, user: %\n", <<user);
-      free(user);
     } else {
       print("success: false, user: %\n", user);
     }
@@ -50,7 +55,6 @@ main :: () {
     todo, success := TodosRepo.find(1);
     if success {
       print("success: true, todo: %\n", <<todo);
-      free(todo);
     } else {
       print("success: false, todo: %\n", todo);
     }
@@ -59,7 +63,6 @@ main :: () {
     todo, success := TodosRepo.find(2);
     if success {
       print("success: true, todo: %\n", <<todo);
-      free(todo);
     } else {
       print("success: false, todo: %\n", todo);
     }
@@ -68,7 +71,6 @@ main :: () {
     todo, success := TodosRepo.find(3);
     if success {
       print("success: true, todo: %\n", <<todo);
-      free(todo);
     } else {
       print("success: false, todo: %\n", todo);
     }

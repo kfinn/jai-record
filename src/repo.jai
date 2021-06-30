@@ -29,18 +29,29 @@ repo :: ($table_name: string, $Record: Type) -> Type {
   IdType :: #run find_id_column_type(Record);
   Select :: #run sql_select(Record);
 
-  return struct {
+  Repo :: struct {
     Select :: Select;
     table_name :: table_name;
     find :: (id: IdType) -> *Select.Record, success: bool {
       with_id: WithId;
       with_id.args[0] = id;
 
-      records, sql_execute_success := sql_select_execute(Select, table_name, *with_id);
-      if !sql_execute_success return null, false;
-      if records.count == 0 return null, false;
+      records, all_success := Repo.all(*with_id);
 
+      if !all_success return null, false;
+      if records.count != 1 return null, false;
       return *records[0], true;
-    }
+    };
+    all :: (where: *$Where = null) -> []Select.Record, success: bool {
+      records, success := sql_select_execute(
+        Select,
+        table_name,
+        where
+      );
+      if !success return .[], false;
+      return records, true;
+    };
   };
+
+  return Repo;
 }

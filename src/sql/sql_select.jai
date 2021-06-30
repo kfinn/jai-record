@@ -53,7 +53,9 @@ sql_select_execute :: ($Select: Type, $sql_from: string, where: *$T) -> []Select
   expression_string := sql_select_to_string(Select.SQL_EXPRESSION, sql_from, where);
 
   args: []Any;
-  if where != null args = where.args; 
+  #if type_of(where) != *void {
+    args = where.args;
+  }
   results, execute_success := execute(connection, Select.Record, expression_string, ..args);
   if !execute_success return Select.Record.[], false;
   return results, true;

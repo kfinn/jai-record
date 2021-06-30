@@ -12,16 +12,21 @@ DefaultSqlWhere :: SqlWhere("", 0);
 DefautlSqlWhereAnd :: SqlWhereAnd(DefaultSqlWhere, DefaultSqlWhere, 0);
 
 static_sql_where_to_string :: ($Where: Type) -> string {
-  #if #run type_info(Where).polymorph_source_struct == type_info(DefaultSqlWhere).polymorph_source_struct {
+  #if #run type_info(Where).type != .STRUCT {
+    return "";
+  }
+
+  #if #run (cast(*Type_Info_Struct)type_info(Where)).polymorph_source_struct == type_info(DefaultSqlWhere).polymorph_source_struct {
     return Where.SQL_EXPRESSION;
   }
-  #if #run type_info(Where).polymorph_source_struct == type_info(DefautlSqlWhereAnd).polymorph_source_struct {
+  #if #run (cast(*Type_Info_Struct)type_info(Where)).polymorph_source_struct == type_info(DefautlSqlWhereAnd).polymorph_source_struct {
     return sprint(
       "((%) AND (%))",
       static_sql_where_to_string(Where.LhsSqlWhere),
       static_sql_where_to_string(Where.RhsSqlWhere)
     );
   }
+  
   return "";
 }
 
