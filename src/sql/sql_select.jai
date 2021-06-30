@@ -30,7 +30,7 @@ sql_select :: ($Record: Type) -> Type {
           slice_end_index
         );
 
-        member_sql_expression = sprint("(%) as %", member_sql_expression_source, member.name);
+        member_sql_expression = sprint("(%) as \"%\"", member_sql_expression_source, member.name);
       } else {
         member_sql_expression = sprint("\"%\"", member.name);
       }
@@ -46,17 +46,15 @@ sql_select :: ($Record: Type) -> Type {
   return SqlSelect(SQL_EXPRESSION=sql_expression, Record=Record);
 };
 
-sql_select_test :: () {
-  SomeRecord :: struct {
-    id: int;
-    name: string;
-    uppercase_email: string; @SqlExpression(upper(email))
-  }
+sql_select_execute :: ($Select: Type, sql_from: string, where: *SqlWhere) -> []Select.Record, success: bool {
+  connection, jai_record_pg_connection_success := jai_record_pg_connection();
+  if !jai_record_pg_connection_success return Select.Record.[], false;
 
-  actual :: #run sql_select(SomeRecord);
+  expression_string := to_string(Select.SQL_EXPRESSION, sql_from, where);
 
-  assert(actual.Record == SomeRecord);
-  assert_equals(
-    "\"id\", \"name\", (upper(email)) as uppercase_email", actual.SQL_EXPRESSION
-  );
-} @Test;
+  args: []Any;
+  if where != null args = where.args; 
+  results, execute_success := execute(connection, Select.Record, expression_string, ..args);
+  if !execute_success return Select.Record.[], false;
+  return results, true;
+}

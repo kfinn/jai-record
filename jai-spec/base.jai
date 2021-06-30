@@ -38,14 +38,24 @@ it :: (description_suffix: string, body: Code) #expand {
 }
 
 to_equal :: (value: $T) -> ToEqual(T) {
-  result: ToEqual(T);
-  result.value = value;
+  matcher: ToEqual(T);
+  matcher.value = value;
 
-  return result;
+  return matcher;
 }
 
 ToEqual :: struct($T: Type) {
   value: T;
+}
+
+ToContainExactly :: struct($T: Type) {
+  values: []T;
+}
+
+to_contain_exactly :: (values: ..$T) -> ToContainExactly(T) {
+  matcher: ToContainExactly(T);
+  matcher.values = values;
+  return matcher;
 }
 
 expect :: (value: $Value, matcher: $MatcherType, loc := #caller_location) #expand {
@@ -57,6 +67,17 @@ expect :: (value: $Value, matcher: $MatcherType, loc := #caller_location) #expan
 
 matches :: (value: $Value, matcher: ToEqual(Value)) -> bool {
   return value == matcher.value;
+}
+
+matches :: (values: []$Value, matcher: ToContainExactly(Value)) -> bool {
+  for expected_value: matcher.values {
+    matched := false;
+    for actual_value: values {
+      matched ||= (expected_value == actual_value);
+    }
+    if !matched return false;
+  }
+  return true;
 }
 
 specs_verify :: () {
