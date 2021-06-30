@@ -4,7 +4,6 @@ services:
     volumes:
       - $JAI_HOME:/jai:ro
       - .:/workspace:rw
-      - ../jai-postgres:/vendor/jai-postgres:rw
     working_dir: /workspace
   db:
     image: postgres

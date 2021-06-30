@@ -7,4 +7,4 @@ Mostly being built while live streaming on twitch at https://twitch.tv/superkevi
 
 # Acknowledgements
 
-- Depends on [`rluba/jai-postgres`](https://github.com/rluba/jai-postgres)
+- postgres code adapted from [`rluba/jai-postgres`](https://github.com/rluba/jai-postgres)

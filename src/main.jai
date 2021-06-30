@@ -1,8 +1,6 @@
 #import "Compiler";
 #import "Basic";
 
-#import "jai-postgres";
-
 #load "repo.jai";
 #load "repos/users_repo.jai";
 #load "repos/todos_repo.jai";
@@ -17,6 +15,8 @@
 
 #load "strings.jai";
 #load "assertions.jai";
+
+#load "postgres/module.jai";
 
 main :: () {
   {
