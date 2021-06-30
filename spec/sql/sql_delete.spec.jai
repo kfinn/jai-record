@@ -1,4 +1,5 @@
-#run describe("sql_delete.jai", 
+#run describe(
+  "sql_delete.jai", 
   before_all=#code {
     connection := jai_record_pg_connection();
     execute(connection, "BEGIN");
