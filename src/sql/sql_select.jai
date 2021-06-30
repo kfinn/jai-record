@@ -46,7 +46,7 @@ sql_select :: ($Record: Type) -> Type {
   return SqlSelect(SQL_EXPRESSION=sql_expression, Record=Record);
 };
 
-sql_select_execute :: ($Select: Type, sql_from: string, where: *$T) -> []Select.Record, success: bool {
+sql_select_execute :: ($Select: Type, $sql_from: string, where: *$T) -> []Select.Record, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return Select.Record.[], false;
 
@@ -59,21 +59,23 @@ sql_select_execute :: ($Select: Type, sql_from: string, where: *$T) -> []Select.
   return results, true;
 }
 
-sql_select_to_string :: (select: string, from: string, where: *$T) -> string {
-  string_builder: String_Builder;
-  defer free_buffers(*string_builder);
+sql_select_to_string :: ($select: string, $from: string, where: *$Where) -> string {
+  return #run () -> string {
+    string_builder: String_Builder;
+    defer free_buffers(*string_builder);
 
-  print_to_builder(*string_builder, "SELECT % ", select);
-  print_to_builder(*string_builder, "FROM % ", from);
+    print_to_builder(*string_builder, "SELECT % ", select);
+    print_to_builder(*string_builder, "FROM % ", from);
 
-  where_string := sql_where_to_string(where);
-  if where_string != "" {
-    print_to_builder(
-      *string_builder,
-      "WHERE % ",
-      prepare_sql_placeholders_for_args(where_string)
-    );
-  }
+    where_string := static_sql_where_to_string(Where);
+    if where_string != "" {
+      print_to_builder(
+        *string_builder,
+        "WHERE % ",
+        prepare_sql_placeholders_for_args(where_string)
+      );
+    }
 
-  return builder_to_string(*string_builder);
+    return builder_to_string(*string_builder);
+  }();
 }

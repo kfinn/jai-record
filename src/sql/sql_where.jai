@@ -22,6 +22,7 @@ static_sql_where_to_string :: ($Where: Type) -> string {
       static_sql_where_to_string(Where.RhsSqlWhere)
     );
   }
+  return "";
 }
 
 SqlWhere :: struct(SQL_EXPRESSION: string, ARGS_COUNT: int) {
