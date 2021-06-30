@@ -65,7 +65,7 @@ sql_update_execute :: (table_name: string, update: *$Update, where: *$SqlWhere) 
   print_to_builder(*expression_string_builder, "UPDATE % ", table_name);
   print_to_builder(*expression_string_builder, "SET % ", Update.SQL_EXPRESSION);
 
-  where_string := to_string(where);
+  where_string := sql_where_to_string(where);
   if where_string != "" {
     print_to_builder(*expression_string_builder, "WHERE % ", where_string);
   }

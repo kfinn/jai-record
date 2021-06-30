@@ -5,7 +5,7 @@ sql_delete_execute :: (from: string, where: *SqlWhere) -> success: bool {
   command := sprint(
     "DELETE FROM \"%\" WHERE %;",
     from,
-    prepare_sql_placeholders_for_args(to_string(where))
+    prepare_sql_placeholders_for_args(sql_where_to_string(where))
   );
 
   args: []Any;

@@ -46,11 +46,11 @@ sql_select :: ($Record: Type) -> Type {
   return SqlSelect(SQL_EXPRESSION=sql_expression, Record=Record);
 };
 
-sql_select_execute :: ($Select: Type, sql_from: string, where: *SqlWhere) -> []Select.Record, success: bool {
+sql_select_execute :: ($Select: Type, sql_from: string, where: *$T) -> []Select.Record, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return Select.Record.[], false;
 
-  expression_string := to_string(Select.SQL_EXPRESSION, sql_from, where);
+  expression_string := sql_select_to_string(Select.SQL_EXPRESSION, sql_from, where);
 
   args: []Any;
   if where != null args = where.args; 
@@ -59,14 +59,14 @@ sql_select_execute :: ($Select: Type, sql_from: string, where: *SqlWhere) -> []S
   return results, true;
 }
 
-to_string :: (select: string, from: string, where: *SqlWhere) -> string {
+sql_select_to_string :: (select: string, from: string, where: *$T) -> string {
   string_builder: String_Builder;
   defer free_buffers(*string_builder);
 
   print_to_builder(*string_builder, "SELECT % ", select);
   print_to_builder(*string_builder, "FROM % ", from);
 
-  where_string := to_string(where);
+  where_string := sql_where_to_string(where);
   if where_string != "" {
     print_to_builder(
       *string_builder,
