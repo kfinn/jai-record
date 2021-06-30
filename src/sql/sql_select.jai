@@ -58,3 +58,22 @@ sql_select_execute :: ($Select: Type, sql_from: string, where: *SqlWhere) -> []S
   if !execute_success return Select.Record.[], false;
   return results, true;
 }
+
+to_string :: (select: string, from: string, where: *SqlWhere) -> string {
+  string_builder: String_Builder;
+  defer free_buffers(*string_builder);
+
+  print_to_builder(*string_builder, "SELECT % ", select);
+  print_to_builder(*string_builder, "FROM % ", from);
+
+  where_string := to_string(where);
+  if where_string != "" {
+    print_to_builder(
+      *string_builder,
+      "WHERE % ",
+      prepare_sql_placeholders_for_args(where_string)
+    );
+  }
+
+  return builder_to_string(*string_builder);
+}

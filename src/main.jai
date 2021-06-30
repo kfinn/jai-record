@@ -73,15 +73,4 @@ main :: () {
       print("success: false, todo: %\n", todo);
     }
   }
-
-  {
-    id_not_included_in_fixtures: SqlWhere(
-      SQL_EXPRESSION="id NOT IN (?, ?)",
-      ARGS_COUNT=2
-    );
-    id_not_included_in_fixtures.args[0] = 1;
-    id_not_included_in_fixtures.args[1] = 2;
-
-    sql_delete_execute("users", *id_not_included_in_fixtures);
-  }
 }

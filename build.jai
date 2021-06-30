@@ -26,21 +26,7 @@
   while true {
     message := compiler_wait_for_message();
     if !message break;
-    
-    if message.kind == {
-      case .TYPECHECKED;
-        typechecked := cast(*Message_Typechecked) message;
-        for declaration: typechecked.declarations {
-          for note: declaration.notes {
-            if note.text == "Test" && declaration.name {
-              add_build_string(tprint("#run %();\n", declaration.name), target_workspace);
-            }
-          }
-        }
-      case .COMPLETE;
-        // The compiler sends us this message when compilation is finished.
-        break;
-    }
+    if message.kind == .COMPLETE break;
   }
 
   compiler_end_intercept(target_workspace);
