@@ -1,44 +1,48 @@
 #run describe("sql_udpate.jai", #code{
   describe("sql_update", #code{
-    it("generates a SQL_EXPRESSION setting all fields in the update type", #code{
-      TestUpdate :: #run sql_update(struct {
-        email: string;
-        pets_count: int;
-        favorite_pet_id: int;
-        born_at: int;
-        percent_complete: float;
-      });
+    describe("SQL_EXPRESSION", #code {
+      it("includes set expressions for all fields in the update type", #code{
+        TestUpdate :: #run sql_update(struct {
+          email: string;
+          pets_count: int;
+          favorite_pet_id: int;
+          born_at: int;
+          percent_complete: float;
+        });
 
-      expect(
-        TestUpdate.SQL_EXPRESSION,
-        to_equal(
-          "email=?, pets_count=?, favorite_pet_id=?, born_at=?, percent_complete=?"
-        )
-      );
+        expect(
+          TestUpdate.SQL_EXPRESSION,
+          to_equal(
+            "email=?, pets_count=?, favorite_pet_id=?, born_at=?, percent_complete=?"
+          )
+        );
+      });
     });
 
-    it("generates to_sql_update_args for all fields in the update type", #code {
-      TestUpdate :: #run sql_update(struct {
-        email: string;
-        pets_count: int;
-        favorite_pet_id: int;
-        born_at: int;
-        percent_complete: float;
+    describe("to_sql_update_args", #code{
+      it("includes all values from the update", #code {
+        TestUpdate :: #run sql_update(struct {
+          email: string;
+          pets_count: int;
+          favorite_pet_id: int;
+          born_at: int;
+          percent_complete: float;
+        });
+
+        test_update: TestUpdate;
+        test_update.email = "some_great@email.edu";
+        test_update.pets_count = 3;
+        test_update.favorite_pet_id = 12;
+        test_update.born_at = 12345;
+        test_update.percent_complete = 0.25;
+
+        sql_update_args := TestUpdate.to_sql_update_args(*test_update);
+        expect(<<(cast(*string) sql_update_args[0].value_pointer), to_equal("some_great@email.edu"));
+        expect(<<(cast(*int) sql_update_args[1].value_pointer), to_equal(3));
+        expect(<<(cast(*int) sql_update_args[2].value_pointer), to_equal(12));
+        expect(<<(cast(*int) sql_update_args[3].value_pointer), to_equal(12345));
+        expect(<<(cast(*float) sql_update_args[4].value_pointer), to_equal(0.25));
       });
-
-      test_update: TestUpdate;
-      test_update.email = "some_great@email.edu";
-      test_update.pets_count = 3;
-      test_update.favorite_pet_id = 12;
-      test_update.born_at = 12345;
-      test_update.percent_complete = 0.25;
-
-      sql_update_args := TestUpdate.to_sql_update_args(*test_update);
-      expect(<<(cast(*string) sql_update_args[0].value_pointer), to_equal("some_great@email.edu"));
-      expect(<<(cast(*int) sql_update_args[1].value_pointer), to_equal(3));
-      expect(<<(cast(*int) sql_update_args[2].value_pointer), to_equal(12));
-      expect(<<(cast(*int) sql_update_args[3].value_pointer), to_equal(12345));
-      expect(<<(cast(*float) sql_update_args[4].value_pointer), to_equal(0.25));
     });
   });
 

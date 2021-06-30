@@ -74,38 +74,3 @@ sql_insert_execute :: (into: string, insert: *$Insert) -> id: Insert.IdType, suc
   if results.count != 1 return 0, false;
   return results[0].id, true;
 }
-
-sql_insert_test :: () {
-  TestUserInsert :: #run sql_insert(struct {
-    email: string;
-    // created_at: time_t;
-    // updated_at: time_t;
-  }, int);
-
-  // assert_equals("(email, created_at, updated_at) VALUES ($1, $2, $3)", TestUserInsert.SQL_EXPRESSION);
-  assert_equals("(email) VALUES ($1)", TestUserInsert.SQL_EXPRESSION);
-  assert_equals(int, TestUserInsert.IdType);
-
-  test_user_to_insert: TestUserInsert;
-  test_user_to_insert.email = "some@email.gov";
-  // test_user_to_insert.created_at = 12345; 
-  // test_user_to_insert.updated_at = 1234567;
-
-  args := TestUserInsert.to_sql_insert_args(*test_user_to_insert);
-  assert_equals(Type_Info_Tag.STRING, args[0].type.type);
-  assert_equals("some@email.gov", <<(cast(*string)args[0].value_pointer));
-  // assert_equals(Type_Info_Tag.INTEGER, args[1].type.type);
-  // assert_equals(12345, <<(cast(*int)args[1].value_pointer));
-  // assert_equals(Type_Info_Tag.INTEGER, args[2].type.type);
-  // assert_equals(1234567, <<(cast(*int)args[2].value_pointer));
-
-  inserted_id, execute_success := sql_insert_execute("users", *test_user_to_insert);
-  assert(execute_success);
-
-  found_user, find_success := UsersRepo.find(inserted_id);
-  assert(find_success);
-
-  assert_equals("some@email.gov", found_user.email);
-  // assert_equals(12345, found_user.created_at);
-  // assert_equals(1234567, found_user.updated_at);
-} @Test;
