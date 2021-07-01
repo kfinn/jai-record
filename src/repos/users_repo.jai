@@ -10,6 +10,7 @@ UsersRepo :: #run repo("users", User);
 UserHasManyTodos :: #run has_many(
   UsersRepo,
   TodosRepo,
+  "user",
   "todos",
   "user_id"
 );

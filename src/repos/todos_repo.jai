@@ -9,6 +9,14 @@ Todo :: struct {
 
 TodosRepo :: #run repo("todos", Todo);
 
+TodoBelongsToUser :: #run belongs_to(
+  TodosRepo,
+  UsersRepo,
+  "todo",
+  "user",
+  "user_id"
+);
+
 TodosCreatedAfter :: SqlWhere(
   SQL_EXPRESSION="created_at > CAST(? AS TIMESTAMP)",
   ARGS_COUNT=1

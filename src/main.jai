@@ -3,6 +3,7 @@
 
 #load "repo.jai";
 #load "has_many.jai";
+#load "belongs_to.jai";
 #load "repos/users_repo.jai";
 #load "repos/todos_repo.jai";
 
@@ -79,9 +80,20 @@ main :: () {
   {
     users_with_todos := UserHasManyTodos.preload(UsersRepo.all());
     for result, result_index: users_with_todos {
-      print("users_with_todos[%] = %\n", result_index, <<result.record);
+      print("users_with_todos[%] = %\n", result_index, <<result.user);
       for todo, todo_index: result.todos {
         print("  todos[%] = %\n", todo_index, <<todo);
+      }
+    }
+  }
+  {
+    todos_with_users := TodoBelongsToUser.preload(TodosRepo.all());
+    for result, result_index: todos_with_users {
+      print("todos_with_users[%] = %\n", result_index, <<result.todo);
+      if result.user != null {
+        print("  user = %\n", <<result.user);
+      } else {
+        print("  user = null\n");
       }
     }
   }
