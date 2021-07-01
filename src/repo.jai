@@ -1,6 +1,3 @@
-time_t :: s64;
-UUID :: string;
-
 _CONNECTION : *PGconn;
 
 jai_record_pg_connection :: () -> *PGconn, success: bool {
@@ -16,17 +13,13 @@ jai_record_pg_connection :: () -> *PGconn, success: bool {
   }
 }
 
-find_id_column_type :: ($Record: Type) -> Type {
-  return type_of(Record.id);
-}
-
 WithId :: SqlWhere(
   SQL_EXPRESSION="id = ?",
   ARGS_COUNT=1
 );
 
 repo :: ($table_name: string, $Record: Type) -> Type {
-  IdType :: #run find_id_column_type(Record);
+  IdType :: type_of(Record.id);
   Select :: #run sql_select(Record);
 
   Repo :: struct {
