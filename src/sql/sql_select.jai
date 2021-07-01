@@ -56,7 +56,10 @@ sql_select_execute :: ($Select: Type, $sql_from: string, where: *$T) -> []Select
   #if type_of(where) != *void {
     args = where.args;
   }
-  results, execute_success := execute(connection, Select.Record, expression_string, ..args);
+
+  prepared_sql, prepared_args := prepare_sql_placeholders_for_args(expression_string, args);
+
+  results, execute_success := execute(connection, Select.Record, prepared_sql, ..prepared_args);
   if !execute_success return Select.Record.[], false;
   return results, true;
 }
@@ -71,11 +74,7 @@ sql_select_to_string :: ($select: string, $from: string, where: *$Where) -> stri
 
     where_string := static_sql_where_to_string(Where);
     if where_string != "" {
-      print_to_builder(
-        *string_builder,
-        "WHERE % ",
-        prepare_sql_placeholders_for_args(where_string)
-      );
+      print_to_builder(*string_builder, "WHERE % ", where_string);
     }
 
     return builder_to_string(*string_builder);

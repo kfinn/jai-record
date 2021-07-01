@@ -71,7 +71,6 @@ sql_update_execute :: (table_name: string, update: *$Update, where: *$SqlWhere) 
   }
   print_to_builder(*expression_string_builder, ";");
   expression_string_with_placeholders := builder_to_string(*expression_string_builder);
-  expression_string := prepare_sql_placeholders_for_args(expression_string_with_placeholders);
 
   args: [Update.ARGS_COUNT + SqlWhere.ARGS_COUNT]Any;
 
@@ -79,6 +78,8 @@ sql_update_execute :: (table_name: string, update: *$Update, where: *$SqlWhere) 
   if where != null {
     for where.args args[Update.ARGS_COUNT + it_index] = it;
   }
+
+  expression_string, flattened_args := prepare_sql_placeholders_for_args(expression_string_with_placeholders, args);
 
   return execute(
     connection,

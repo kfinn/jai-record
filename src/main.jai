@@ -2,6 +2,7 @@
 #import "Basic";
 
 #load "repo.jai";
+#load "has_many.jai";
 #load "repos/users_repo.jai";
 #load "repos/todos_repo.jai";
 
@@ -73,6 +74,15 @@ main :: () {
       print("success: true, todo: %\n", <<todo);
     } else {
       print("success: false, todo: %\n", todo);
+    }
+  }
+  {
+    users_with_todos := UserHasManyTodos.preload(UsersRepo.all());
+    for result, result_index: users_with_todos {
+      print("users_with_todos[%] = %\n", result_index, <<result.record);
+      for todo, todo_index: result.todos {
+        print("  todos[%] = %\n", todo_index, <<todo);
+      }
     }
   }
 }

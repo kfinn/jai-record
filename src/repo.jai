@@ -31,6 +31,8 @@ repo :: ($table_name: string, $Record: Type) -> Type {
 
   Repo :: struct {
     Select :: Select;
+    IdType :: IdType;
+    Record :: Record;
     table_name :: table_name;
     find :: (id: IdType) -> *Select.Record, success: bool {
       with_id: WithId;

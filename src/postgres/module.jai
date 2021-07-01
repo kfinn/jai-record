@@ -67,32 +67,11 @@ send_query :: (conn: *PGconn, command: string, args: []Any) -> *PGresult {
 	new_context.allocator_data = *pool;
 
 	push_context new_context {
-		param_types := NewArray(args.count, Oid, initialized = false);
 		param_values := NewArray(args.count, *u8, initialized = false);
-		param_lengths := NewArray(args.count, s32, initialized = false);
-		param_formats := NewArray(args.count, s32, initialized = false);
 
 		for arg, arg_index: args {
       encoded_arg := sprint("%", arg);
       param_values[arg_index] = to_c_string(encoded_arg);
-      param_lengths[arg_index] = xx encoded_arg.count;
-      param_formats[arg_index] = 0;
-
-			if arg.type.type == {
-				case Type_Info_Tag.INTEGER;
-          param_types[arg_index] = cast(Oid) Pq_Types.INT8;
-
-				case Type_Info_Tag.FLOAT;
-          param_types[arg_index] = cast(Oid) Pq_Types.FLOAT8;
-
-				case Type_Info_Tag.STRING;
-          param_types[arg_index] = cast(Oid) Pq_Types.VARCHAR;
-
-				case;
-					// @ToDo: Implement
-					log_error("Unsupported param type: %", arg.type);
-					return null;
-			}
 		}
 
 		c_command := to_c_string(command);
@@ -101,10 +80,10 @@ send_query :: (conn: *PGconn, command: string, args: []Any) -> *PGresult {
       conn,
       c_command,
       xx args.count,
-      param_types.data,
+      null,
       param_values.data,
-      param_lengths.data,
-      param_formats.data,
+      null,
+      null,
       0
     );
 	}
