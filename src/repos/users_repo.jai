@@ -12,5 +12,6 @@ UserHasManyTodos :: #run has_many(
   TodosRepo,
   "user",
   "todos",
-  "user_id"
+  "user_id",
+  inverse_of=TodoBelongsToUser
 );

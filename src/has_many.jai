@@ -5,12 +5,15 @@ HasManyPreloaded :: struct($Source: Type, $Destination: Type, $source_name: stri
   #insert #run sprint("%: []*Destination;\n", destination_name);
 }
 
+EmptyInverse :: struct {};
+
 has_many :: (
   $source_repo: Type,
   $destination_repo: Type,
   $source_name: string,
   $destination_name: string,
-  $foreign_key: string
+  $foreign_key: string,
+  $inverse_of: Type = EmptyInverse
 ) -> Type {
   HasMany :: struct {
     associate :: (
@@ -55,23 +58,50 @@ has_many :: (
       }
       return associated_source_records;
     };
-    preload :: (source_records: []$S) -> []HasManyPreloaded(
-      S,
-      destination_repo.Record,
-      source_name,
-      destination_name
-    ) {
-      source_ids: [..]Any;
-      for * source_records {
-        array_add(*source_ids, it.id);
-      }
+    #if inverse_of != EmptyInverse {
+      preload :: (source_records: []$S) -> []HasManyPreloaded(
+        S,
+        BelongsToPreloaded(
+          destination_repo.Record,
+          S,
+          inverse_of.source_name,
+          inverse_of.destination_name
+        ),
+        source_name,
+        destination_name
+      ) {
+        source_ids: [..]Any;
+        for * source_records {
+          array_add(*source_ids, it.id);
+        }
 
-      foreign_key_in: SqlWhere(#run sprint("% IN (?)", foreign_key), 1);
-      foreign_key_in.args[0] = source_ids;
-      
-      destination_records := destination_repo.all(*foreign_key_in);
-      return HasMany.associate(source_records, destination_records);
-    };
+        foreign_key_in: SqlWhere(#run sprint("% IN (?)", foreign_key), 1);
+        foreign_key_in.args[0] = source_ids;
+        
+        destination_records := inverse_of.associate(destination_repo.all(*foreign_key_in), source_records);
+
+        return HasMany.associate(source_records, destination_records);
+      };
+    } else {
+      preload :: (source_records: []$S) -> []HasManyPreloaded(
+        S,
+        destination_repo.Record,
+        source_name,
+        destination_name
+      ) {
+        source_ids: [..]Any;
+        for * source_records {
+          array_add(*source_ids, it.id);
+        }
+
+        foreign_key_in: SqlWhere(#run sprint("% IN (?)", foreign_key), 1);
+        foreign_key_in.args[0] = source_ids;
+        
+        destination_records := destination_repo.all(*foreign_key_in);
+
+        return HasMany.associate(source_records, destination_records);
+      };
+    }
   };
   
   return HasMany;

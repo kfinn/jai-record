@@ -11,6 +11,8 @@ belongs_to :: (
   $foreign_key: string
 ) -> Type {
   BelongsTo :: struct {
+    source_name :: source_name;
+    destination_name :: destination_name;
     associate :: (
       source_records: []$S,
       destination_records: []$D

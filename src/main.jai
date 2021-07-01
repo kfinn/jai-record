@@ -79,10 +79,12 @@ main :: () {
   }
   {
     users_with_todos := UserHasManyTodos.preload(UsersRepo.all());
+
     for result, result_index: users_with_todos {
-      print("users_with_todos[%] = %\n", result_index, <<result.user);
+      print("users_with_todos[%] = %@%\n", result_index, <<result.user, result.user);
       for todo, todo_index: result.todos {
         print("  todos[%] = %\n", todo_index, <<todo);
+        print("  todos[%].user = %@%\n", todo_index, <<todo.user, todo.user);
       }
     }
   }
