@@ -1,6 +1,3 @@
-String :: #import "String";
-#import "Pool";
-
 #load "libpq.jai";
 
 connect :: (conn_str: string) -> *PGconn, success: bool {
@@ -177,13 +174,13 @@ set_string_result_value :: (pq_type: Pq_Types, value: string, destination: *stri
 set_integer_result_value :: (pq_type: Pq_Types, value: string, destination: *$T) {
   using Pq_Types;
   assert(pq_type == INT8 || pq_type == INT2 || pq_type == INT4, "Expected int type, got: %::%", value, pq_type);
-  <<destination = String.parse_int(*value, T);
+  <<destination = parse_int(*value, T);
 }
 
 set_float_result_value :: (pq_type: Pq_Types, value: string, destination: *$T) {
   using Pq_Types;
   assert(pq_type == FLOAT4 || pq_type == FLOAT8, "Expected float type, got: %::%", value, pq_type);
-  <<destination = String.parse_float(*value, T);
+  <<destination = parse_float(*value, T);
 }
 
 set_unknown_result_value :: (pq_type: Pq_Types, value: string, destination: *$T) {

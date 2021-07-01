@@ -20,7 +20,7 @@ sql_update :: ($UpdatableFields: Type) -> Type {
       array_add(*updates, sprint("%=?", it.name));
     }
 
-    print_to_builder(*sql_expression_builder, join(updates));
+    print_to_builder(*sql_expression_builder, join(..updates, separator=", "));
 
     return builder_to_string(*sql_expression_builder);
   }();

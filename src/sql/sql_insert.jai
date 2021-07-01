@@ -22,7 +22,11 @@ sql_insert :: ($InsertableFields: Type, $IdType: Type) -> Type {
       array_add(*insertable_field_placeholders, sprint("$%", it_index + 1));
     }
 
-    return sprint("(%) VALUES (%)", join(insertable_field_names), join(insertable_field_placeholders));
+    return sprint(
+      "(%) VALUES (%)", 
+      join(..insertable_field_names, separator=", "),
+      join(..insertable_field_placeholders, separator=", ")
+    );
   }();
 
   to_sql_insert_args :: (insertable_fields: *InsertableFields) -> [..]Any {

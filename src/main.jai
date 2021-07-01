@@ -1,5 +1,7 @@
 #import "Compiler";
 #import "Basic";
+#import "Pool";
+#import "String";
 
 #load "repo.jai";
 #load "has_many.jai";
@@ -15,7 +17,6 @@
 #load "sql/sql_update.jai";
 #load "sql/sql_where.jai";
 
-#load "strings.jai";
 #load "assertions.jai";
 
 #load "postgres/module.jai";

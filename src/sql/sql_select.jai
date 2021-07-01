@@ -13,8 +13,8 @@ sql_select :: ($Record: Type) -> Type {
       SQL_EXPRESSION_NOTE_SUFFIX :: ")";
 
       for note: member.notes {
-        if !has_prefix(note, SQL_EXPRESSION_NOTE_PREFIX) continue;
-        if !has_suffix(note, SQL_EXPRESSION_NOTE_SUFFIX) continue;
+        if !begins_with(note, SQL_EXPRESSION_NOTE_PREFIX) continue;
+        if !ends_with(note, SQL_EXPRESSION_NOTE_SUFFIX) continue;
 
         sql_expression_note = note;
       }
@@ -22,12 +22,12 @@ sql_select :: ($Record: Type) -> Type {
       member_sql_expression: string;
       if sql_expression_note {
         slice_start_index :: SQL_EXPRESSION_NOTE_PREFIX.count;
-        slice_end_index := sql_expression_note.count - SQL_EXPRESSION_NOTE_SUFFIX.count - 1;
+        slice_count := sql_expression_note.count - (SQL_EXPRESSION_NOTE_SUFFIX.count + SQL_EXPRESSION_NOTE_PREFIX.count);
 
         member_sql_expression_source := slice(
           sql_expression_note,
           slice_start_index,
-          slice_end_index
+          slice_count
         );
 
         member_sql_expression = sprint("(%) as \"%\"", member_sql_expression_source, member.name);
