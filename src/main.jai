@@ -17,8 +17,6 @@
 #load "sql/sql_update.jai";
 #load "sql/sql_where.jai";
 
-#load "assertions.jai";
-
 #load "postgres/module.jai";
 
 main :: () {
