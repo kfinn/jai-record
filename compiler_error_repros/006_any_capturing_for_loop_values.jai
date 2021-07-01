@@ -13,3 +13,5 @@
 main :: () {}
 
 //  is this something to report?
+// probably not, seems like it's actually working as intended?
+// and, using `for * ints` fixes it.
