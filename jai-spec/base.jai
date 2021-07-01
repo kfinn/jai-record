@@ -48,14 +48,28 @@ ToEqual :: struct($T: Type) {
   value: T;
 }
 
-ToContainExactly :: struct($T: Type) {
-  values: []T;
+to_be_present :: () -> ToBePresent {
+  return TO_BE_PRESENT_SINGLETON;
 }
+
+TO_BE_PRESENT_SINGLETON: ToBePresent;
+ToBePresent :: struct {}
+
+to_be_empty :: () -> ToBeEmpty {
+  return TO_BE_EMPTY_SINGLETON;
+}
+
+TO_BE_EMPTY_SINGLETON: ToBeEmpty;
+ToBeEmpty :: struct {}
 
 to_contain_exactly :: (values: ..$T) -> ToContainExactly(T) {
   matcher: ToContainExactly(T);
   matcher.values = values;
   return matcher;
+}
+
+ToContainExactly :: struct($T: Type) {
+  values: []T;
 }
 
 expect :: (value: $Value, matcher: $MatcherType, loc := #caller_location) #expand {
@@ -78,6 +92,14 @@ matches :: (values: []$Value, matcher: ToContainExactly(Value)) -> bool {
     if !matched return false;
   }
   return true;
+}
+
+matches :: (value: *$Value, matcher: ToBePresent) -> bool {
+  return value != null;
+}
+
+matches :: (value: []$Value, matcher: ToBeEmpty) -> bool {
+  return value.count == 0;
 }
 
 specs_verify :: () {
