@@ -1,7 +1,5 @@
 IdIn :: SqlWhere("id IN ?", 1);
 
-EmptyInverse :: struct {};
-
 HasMany :: struct(
   $source_repo: Type,
   $destination_repo: Type,

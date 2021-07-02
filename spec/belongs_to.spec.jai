@@ -30,7 +30,6 @@
           "test_user",
           "test_todos",
           "user_id",
-          inverse_of=TestTodoBelongsToTestUser
         );
 
         TestTodoBelongsToTestUser :: BelongsTo(
@@ -123,6 +122,95 @@
         expect(test_todo_for_user_with_one_todo.description, to_equal("todo for user with one todo"));
         expect(test_todo_for_user_with_one_todo.test_user, to_be_present());
         expect(test_todo_for_user_with_one_todo.test_user.email, to_equal("user_with_one_todo@email.edu"));
+      });
+      it("sets inverses", #code{
+        TestUser :: struct {
+          id: int;
+          email: string;
+        }
+        TestUsersRepo :: #run repo("users", TestUser);
+
+        TestTodo :: struct {
+          id: int;
+          user_id: int;
+          description: string;
+        }
+        TestTodosRepo :: #run repo("todos", TestTodo);
+
+        TestUserHasManyTestTodos :: HasMany(
+          TestUsersRepo,
+          TestTodosRepo,
+          "test_user",
+          "test_todos",
+          "user_id",
+          inverse_of=BelongsTo(
+            TestTodosRepo,
+            TestUsersRepo,
+            "test_todo",
+            "test_user",
+            "user_id",
+          )
+        );
+
+        TestTodoBelongsToTestUser :: BelongsTo(
+          TestTodosRepo,
+          TestUsersRepo,
+          "test_todo",
+          "test_user",
+          "user_id",
+          inverse_of=HasMany(
+            TestUsersRepo,
+            TestTodosRepo,
+            "test_user",
+            "test_todos",
+            "user_id",
+          )
+        );
+
+        connection := jai_record_pg_connection();
+
+        InsertResult :: struct { id: int; }
+
+        test_user_insert_results := execute(
+          connection,
+          InsertResult,
+          #string SQL
+            INSERT INTO users (email)
+            VALUES
+              ('user_with_one_todo@email.edu')
+            RETURNING id;
+          SQL
+        );
+
+        test_user_id := test_user_insert_results[0].id;
+
+        test_todo_insert_results := execute(
+          connection,
+          InsertResult,
+          #string SQL
+            INSERT INTO todos (user_id, description)
+            VALUES
+              ($1, 'todo description')
+            RETURNING id
+          SQL,
+          test_user_id
+        );
+
+        test_todo_id := test_todo_insert_results[0].id;
+
+        is_test_todo: SqlWhere("id = ?", 1);
+        is_test_todo.args[0] = test_todo_id;
+
+        test_todos_with_test_users := preload(
+          TestTodoBelongsToTestUser,
+          TestTodosRepo.all(*is_test_todo)
+        );
+
+        test_todo := test_todos_with_test_users[0];
+        expect(test_todo.test_user.test_todos[0].description, to_equal("todo description"));
+
+        test_todo.description = "I'd go for a banana right now";
+        expect(test_todo.test_user.test_todos[0].description, to_equal("I'd go for a banana right now"));
       });
     }
   );

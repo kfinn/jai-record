@@ -1,3 +1,5 @@
+EmptyInverse :: struct {};
+
 PreloadedResult :: struct($preloader: Type) {
   #insert #run sprint(
     #string BODY
