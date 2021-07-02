@@ -114,15 +114,15 @@ main :: () {
       }
     }
   }
-  // {
-  //   todos_with_users := TodoBelongsToUser.preload(TodosRepo.all());
-  //   for result, result_index: todos_with_users {
-  //     print("todos_with_users[%] = %\n", result_index, <<result.todo);
-  //     if result.user != null {
-  //       print("  user = %\n", <<result.user);
-  //     } else {
-  //       print("  user = null\n");
-  //     }
-  //   }
-  // }
+  {
+    todos_with_users := preload(TodoBelongsToUser, TodosRepo.all());
+    for result, result_index: todos_with_users {
+      print("todos_with_users[%] = %\n", result_index, <<result.todo);
+      if result.user != null {
+        print("  user = %\n", <<result.user);
+      } else {
+        print("  user = null\n");
+      }
+    }
+  }
 }

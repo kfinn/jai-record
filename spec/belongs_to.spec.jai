@@ -33,7 +33,7 @@
           inverse_of=TestTodoBelongsToTestUser
         );
 
-        TestTodoBelongsToTestUser :: #run belongs_to(
+        TestTodoBelongsToTestUser :: BelongsTo(
           TestTodosRepo,
           TestUsersRepo,
           "test_todo",
@@ -85,7 +85,8 @@
         is_test_todo: SqlWhere("id IN (?)", 1);
         is_test_todo.args[0] = test_todo_ids;
 
-        test_todos_with_test_users := TestTodoBelongsToTestUser.preload(
+        test_todos_with_test_users := preload(
+          TestTodoBelongsToTestUser,
           TestTodosRepo.all(*is_test_todo)
         );
 

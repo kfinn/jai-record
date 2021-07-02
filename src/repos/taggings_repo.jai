@@ -6,7 +6,7 @@ Tagging :: struct {
 
 TaggingsRepo :: #run repo("taggings", Tagging);
 
-TaggingBelongsToTag :: #run belongs_to(
+TaggingBelongsToTag :: BelongsTo(
   TaggingsRepo,
   TagsRepo,
   "tagging",
@@ -14,7 +14,7 @@ TaggingBelongsToTag :: #run belongs_to(
   "tag_id"
 );
 
-TaggingBelongsToTodo :: #run belongs_to(
+TaggingBelongsToTodo :: BelongsTo(
   TaggingsRepo,
   TodosRepo,
   "tagging",

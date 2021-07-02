@@ -9,7 +9,7 @@ Todo :: struct {
 
 TodosRepo :: #run repo("todos", Todo);
 
-TodoBelongsToUser :: #run belongs_to(
+TodoBelongsToUser :: BelongsTo(
   TodosRepo,
   UsersRepo,
   "todo",

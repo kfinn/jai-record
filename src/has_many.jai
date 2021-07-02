@@ -45,8 +45,7 @@ associate_has_many :: (
       }();
     }
     #insert #run sprint(
-      "associated_source_records[source_record_index].%.% = related_destination_records;\n",
-      has_many.destination_name,
+      "associated_source_records[source_record_index].% = related_destination_records;\n",
       has_many.destination_inner_name
     );
   }
@@ -67,5 +66,9 @@ preload_has_many_without_inverse :: (
 
   destination_records := has_many.destination_repo.all(*foreign_key_in);
 
-  return associate_has_many(has_many, source_records, destination_records);
+  return associate_has_many(
+    has_many,
+    source_records,
+    destination_records
+  );
 }
