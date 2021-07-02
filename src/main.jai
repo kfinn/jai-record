@@ -81,13 +81,13 @@ main :: () {
     }
   }
   {
-    users_with_todos := preload_has_many_without_inverse(UserHasManyTodos, UsersRepo.all());
+    users_with_todos := preload(UserHasManyTodos, UsersRepo.all());
 
     for result, result_index: users_with_todos {
       print("users_with_todos[%] = %@%\n", result_index, <<result.user, result.user);
       for todo, todo_index: result.todos {
         print("  todos[%] = %\n", todo_index, <<todo);
-        // print("  todos[%].user = %@%\n", todo_index, <<todo.user, todo.user);
+        print("  todos[%].user = %@%\n", todo_index, <<todo.user, todo.user);
       }
     }
   }
@@ -97,7 +97,7 @@ main :: () {
       UserHasManyTags
     );
 
-    users_with_todos_and_tags := preload_composed_preloader(
+    users_with_todos_and_tags := preload(
       ComposedPreloader,
       UsersRepo.all()
     );
