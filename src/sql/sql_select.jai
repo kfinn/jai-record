@@ -59,6 +59,7 @@ sql_select_execute :: ($Select: Type, $sql_from: string, where: *$T) -> []Select
 
   prepared_sql, prepared_args := prepare_sql_placeholders_for_args(expression_string, args);
 
+
   results, execute_success := execute(connection, Select.Record, prepared_sql, ..prepared_args);
   if !execute_success return Select.Record.[], false;
   return results, true;

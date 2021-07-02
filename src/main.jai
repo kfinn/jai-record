@@ -4,10 +4,13 @@
 #import "String";
 
 #load "repo.jai";
+#load "composed_preloader.jai";
 #load "has_many.jai";
 #load "belongs_to.jai";
 #load "repos/users_repo.jai";
 #load "repos/todos_repo.jai";
+#load "repos/tags_repo.jai";
+#load "repos/taggings_repo.jai";
 
 #load "sql.jai";
 #load "sql/sql_delete.jai";
@@ -77,25 +80,48 @@ main :: () {
     }
   }
   {
-    users_with_todos := UserHasManyTodos.preload(UsersRepo.all());
+    users_with_todos := preload_has_many_without_inverse(UserHasManyTodos, UsersRepo.all());
 
     for result, result_index: users_with_todos {
       print("users_with_todos[%] = %@%\n", result_index, <<result.user, result.user);
       for todo, todo_index: result.todos {
         print("  todos[%] = %\n", todo_index, <<todo);
-        print("  todos[%].user = %@%\n", todo_index, <<todo.user, todo.user);
+        // print("  todos[%].user = %@%\n", todo_index, <<todo.user, todo.user);
       }
     }
   }
   {
-    todos_with_users := TodoBelongsToUser.preload(TodosRepo.all());
-    for result, result_index: todos_with_users {
-      print("todos_with_users[%] = %\n", result_index, <<result.todo);
-      if result.user != null {
-        print("  user = %\n", <<result.user);
-      } else {
-        print("  user = null\n");
+    ComposedPreloader :: #run compose_preloader(
+      UserHasManyTodos,
+      UserHasManyTags
+    );
+
+    users_with_todos_and_tags := preload_composed_preloader(
+      ComposedPreloader,
+      UsersRepo.all()
+    );
+
+    for result, result_index: users_with_todos_and_tags {
+      print("users_with_todos_and_tags[%] = %@%\n", result_index, <<result.user, result.user);
+      for todo, todo_index: result.todos {
+        print("  todos[%] = %\n", todo_index, <<todo);
+        // print("  todos[%].user = %@%\n", todo_index, <<todo.user, todo.user);
+      }
+      for tag, tag_index: result.tags {
+        print("  tags[%] = %\n", tag_index, <<tag);
+        // print("  todos[%].user = %@%\n", todo_index, <<todo.user, todo.user);
       }
     }
   }
+  // {
+  //   todos_with_users := TodoBelongsToUser.preload(TodosRepo.all());
+  //   for result, result_index: todos_with_users {
+  //     print("todos_with_users[%] = %\n", result_index, <<result.todo);
+  //     if result.user != null {
+  //       print("  user = %\n", <<result.user);
+  //     } else {
+  //       print("  user = null\n");
+  //     }
+  //   }
+  // }
 }

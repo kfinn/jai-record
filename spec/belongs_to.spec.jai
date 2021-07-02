@@ -24,7 +24,7 @@
         }
         TestTodosRepo :: #run repo("todos", TestTodo);
 
-        TestUserHasManyTestTodos :: #run has_many(
+        TestUserHasManyTestTodos :: HasMany(
           TestUsersRepo,
           TestTodosRepo,
           "test_user",

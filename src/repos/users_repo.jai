@@ -7,11 +7,19 @@ User :: struct {
 
 UsersRepo :: #run repo("users", User);
 
-UserHasManyTodos :: #run has_many(
+UserHasManyTodos :: HasMany(
   UsersRepo,
   TodosRepo,
   "user",
   "todos",
   "user_id",
   inverse_of=TodoBelongsToUser
+);
+
+UserHasManyTags :: HasMany(
+  UsersRepo,
+  TagsRepo,
+  "user",
+  "tags",
+  "user_id"
 );
