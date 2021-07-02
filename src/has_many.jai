@@ -6,39 +6,26 @@ HasMany :: struct(
   $source_repo: Type,
   $destination_repo: Type,
   $source_name: string,
-  $destination_name: string,
+  $destination_inner_name: string,
   $foreign_key: string,
   $inverse_of: Type = EmptyInverse
 ) {
+  preload :: preload_has_many_without_inverse;
   Source :: source_repo.Record;
+  destination_name :: #run sprint("preloaded_%", destination_inner_name);
   Destination :: struct {
-    #insert #run sprint("%: []*destination_repo.Record;\n", destination_name);
+    #insert #run sprint("%: []*destination_repo.Record;\n", destination_inner_name);
   }
 }
-
-HasManyPreloadedResult :: struct($Source: Type, $Destination: Type, $source_name: string) {
-  #insert #run sprint("using %: *Source;\n", source_name);
-  using preloaded: Destination;
-}
-
-
 
 associate_has_many :: (
   $has_many: Type,
   source_records: []has_many.source_repo.Record,
   destination_records: []has_many.destination_repo.Record
-) -> []HasManyPreloadedResult(
-  has_many.source_repo.Record,
-  has_many.Destination,
-  has_many.source_name
-) {
+) -> []PreloadedResult(has_many) {
   associated_source_records := NewArray(
     source_records.count,
-    HasManyPreloadedResult(
-      has_many.source_repo.Record,
-      has_many.Destination,
-      has_many.source_name
-    )
+    PreloadedResult(has_many)
   );
   for * source_record, source_record_index: source_records {
     #insert #run sprint(
@@ -58,8 +45,9 @@ associate_has_many :: (
       }();
     }
     #insert #run sprint(
-      "associated_source_records[source_record_index].preloaded.% = related_destination_records;\n",
-      has_many.destination_name
+      "associated_source_records[source_record_index].%.% = related_destination_records;\n",
+      has_many.destination_name,
+      has_many.destination_inner_name
     );
   }
   return associated_source_records;
@@ -68,11 +56,7 @@ associate_has_many :: (
 preload_has_many_without_inverse :: (
   $has_many: Type,
   source_records: []has_many.source_repo.Record
-) -> []HasManyPreloadedResult(
-  has_many.source_repo.Record,
-  has_many.Destination,
-  has_many.source_name
-) {
+) -> []PreloadedResult(has_many) {
   source_ids: [..]Any;
   for * source_records {
     array_add(*source_ids, it.id);

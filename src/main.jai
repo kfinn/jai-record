@@ -4,6 +4,7 @@
 #import "String";
 
 #load "repo.jai";
+#load "preloaders.jai";
 #load "composed_preloader.jai";
 #load "has_many.jai";
 #load "belongs_to.jai";
