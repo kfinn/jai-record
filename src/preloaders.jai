@@ -15,5 +15,21 @@ preload :: (
   $preloader: Type,
   source_records: []preloader.Source
 ) -> []PreloadedResult(preloader) {
-  return preloader.preload(preloader, source_records);
+  destination_records := preloader_fetch(preloader, source_records);
+  return preloader_associate(preloader, source_records, destination_records);
+}
+
+preloader_fetch :: (
+  $preloader: Type,
+  source_records: []preloader.Source
+) -> preloader.Fetched {
+  return preloader.fetch(preloader, source_records);
+}
+
+preloader_associate :: (
+  $preloader: Type,
+  source_records: []preloader.Source,
+  destination_records: preloader.Fetched
+) -> []PreloadedResult(preloader) {
+  return preloader.associate(preloader, source_records, destination_records);
 }

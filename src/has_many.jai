@@ -8,26 +8,55 @@ HasMany :: struct(
   $foreign_key: string,
   $inverse_of: Type = EmptyInverse
 ) {
+  Fetched :: []destination_repo.Record;
+  fetch :: fetch_has_many;
+  associate :: associate_has_many;
+
   #if inverse_of == EmptyInverse {
     Destination :: struct {
       #insert #run sprint("%: []*destination_repo.Record;\n", destination_inner_name);
     }
-    preload :: preload_has_many_without_inverse;
   } else {
     Destination :: struct {
       #insert #run sprint("%: []*PreloadedResult(inverse_of);\n", destination_inner_name);
     }
-    preload :: preload_has_many_with_inverse;
   }
   Source :: source_repo.Record;
   destination_name :: #run sprint("preloaded_%", destination_inner_name);
 }
 
+fetch_has_many :: (
+  $has_many: Type,
+  source_records: []has_many.Source
+) -> has_many.Fetched {
+  source_ids: [..]Any;
+  for * source_records {
+    array_add(*source_ids, it.id);
+  }
+
+  foreign_key_in: SqlWhere(#run sprint("% IN (?)", has_many.foreign_key), 1);
+  foreign_key_in.args[0] = source_ids;
+
+  return has_many.destination_repo.all(*foreign_key_in);
+}
+
 associate_has_many :: (
   $has_many: Type,
-  source_records: []has_many.source_repo.Record,
-  destination_records: []$D
+  source_records: []has_many.Source,
+  fetched_records: has_many.Fetched
 ) -> []PreloadedResult(has_many) {
+  #if has_many.inverse_of == EmptyInverse {
+    destination_records := fetched_records;
+    D :: has_many.destination_repo.Record;
+  } else {
+    destination_records := associate_belongs_to(
+      has_many.inverse_of,
+      fetched_records,
+      source_records
+    );
+    D :: PreloadedResult(has_many.inverse_of);
+  }
+
   associated_source_records := NewArray(
     source_records.count,
     PreloadedResult(has_many)
@@ -55,52 +84,4 @@ associate_has_many :: (
     );
   }
   return associated_source_records;
-}
-
-preload_has_many_without_inverse :: (
-  $has_many: Type,
-  source_records: []has_many.source_repo.Record
-) -> []PreloadedResult(has_many) {
-  source_ids: [..]Any;
-  for * source_records {
-    array_add(*source_ids, it.id);
-  }
-
-  foreign_key_in: SqlWhere(#run sprint("% IN (?)", has_many.foreign_key), 1);
-  foreign_key_in.args[0] = source_ids;
-
-  destination_records := has_many.destination_repo.all(*foreign_key_in);
-
-  return associate_has_many(
-    has_many,
-    source_records,
-    destination_records
-  );
-}
-
-preload_has_many_with_inverse :: (
-  $has_many: Type,
-  source_records: []has_many.source_repo.Record
-) -> []PreloadedResult(has_many) {
-  source_ids: [..]Any;
-  for * source_records {
-    array_add(*source_ids, it.id);
-  }
-
-  foreign_key_in: SqlWhere(#run sprint("% IN (?)", has_many.foreign_key), 1);
-  foreign_key_in.args[0] = source_ids;
-
-  destination_records := has_many.destination_repo.all(*foreign_key_in);
-
-  destination_records_with_inverses := associate_belongs_to(
-    has_many.inverse_of,
-    destination_records,
-    source_records
-  );
-
-  return associate_has_many(
-    has_many,
-    source_records,
-    destination_records_with_inverses
-  );
 }
