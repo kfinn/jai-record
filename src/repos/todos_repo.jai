@@ -14,7 +14,14 @@ TodoBelongsToUser :: BelongsTo(
   UsersRepo,
   "todo",
   "user",
-  "user_id"
+  "user_id",
+  inverse_of=HasMany(
+    UsersRepo,
+    TodosRepo,
+    "user",
+    "todos",
+    "user_id"
+  )
 );
 
 TodosCreatedAfter :: SqlWhere(

@@ -105,12 +105,12 @@ main :: () {
     for result, result_index: users_with_todos_and_tags {
       print("users_with_todos_and_tags[%] = %@%\n", result_index, <<result.user, result.user);
       for todo, todo_index: result.todos {
-        print("  todos[%] = %\n", todo_index, <<todo);
-        // print("  todos[%].user = %@%\n", todo_index, <<todo.user, todo.user);
+        print("  todos[%] = %\n", todo_index, <<todo.todo);
+        print("  todos[%].user = %@%\n", todo_index, <<todo.user, todo.user);
       }
       for tag, tag_index: result.tags {
-        print("  tags[%] = %\n", tag_index, <<tag);
-        // print("  todos[%].user = %@%\n", todo_index, <<todo.user, todo.user);
+        print("  tags[%] = %\n", tag_index, <<tag.tag);
+        print("  tags[%].user = %@%\n", tag_index, <<tag.user, tag.user);
       }
     }
   }
@@ -119,7 +119,7 @@ main :: () {
     for result, result_index: todos_with_users {
       print("todos_with_users[%] = %\n", result_index, <<result.todo);
       if result.user != null {
-        print("  user = %\n", <<result.user);
+        print("  user = %\n", <<result.user.user);
       } else {
         print("  user = null\n");
       }

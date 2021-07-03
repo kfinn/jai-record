@@ -11,5 +11,12 @@ TagHasManyTaggings :: HasMany(
   TaggingsRepo,
   "tag",
   "taggings",
-  "tag_id"
+  "tag_id",
+  inverse_of=BelongsTo(
+    TaggingsRepo,
+    TagsRepo,
+    "tagging",
+    "tag",
+    "tag_id"
+  )
 );

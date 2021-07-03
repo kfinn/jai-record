@@ -11,7 +11,14 @@ TaggingBelongsToTag :: BelongsTo(
   TagsRepo,
   "tagging",
   "tag",
-  "tag_id"
+  "tag_id",
+  inverse_of=HasMany(
+    TagsRepo,
+    TaggingsRepo,
+    "tag",
+    "taggings",
+    "tag_id"
+  )
 );
 
 TaggingBelongsToTodo :: BelongsTo(
@@ -19,5 +26,12 @@ TaggingBelongsToTodo :: BelongsTo(
   TodosRepo,
   "tagging",
   "todo",
-  "todo_id"
+  "todo_id",
+  inverse_of=HasMany(
+    TodosRepo,
+    TaggingsRepo,
+    "todo",
+    "taggings",
+    "todo_id"
+  )
 );

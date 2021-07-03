@@ -13,7 +13,13 @@ UserHasManyTodos :: HasMany(
   "user",
   "todos",
   "user_id",
-  inverse_of=TodoBelongsToUser
+  inverse_of=BelongsTo(
+    TodosRepo,
+    UsersRepo,
+    "todo",
+    "user",
+    "user_id"
+  )
 );
 
 UserHasManyTags :: HasMany(
@@ -21,5 +27,12 @@ UserHasManyTags :: HasMany(
   TagsRepo,
   "user",
   "tags",
-  "user_id"
+  "user_id",
+  inverse_of=BelongsTo(
+    TagsRepo,
+    UsersRepo,
+    "tag",
+    "user",
+    "user_id",
+  )
 );
