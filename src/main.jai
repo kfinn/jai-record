@@ -93,7 +93,7 @@ main :: () {
     }
   }
   {
-    ComposedPreloader :: #run compose_preloader(
+    ComposedPreloader :: #run composed_preloader(
       UserHasManyTodos,
       UserHasManyTags
     );
@@ -123,6 +123,42 @@ main :: () {
         print("  user = %\n", <<result.user.user);
       } else {
         print("  user = null\n");
+      }
+    }
+  }
+  {
+    users_with_the_works := preload(
+      #run composed_preloader(
+        #run nested_preloader(
+          UserHasManyTodos,
+          #run nested_preloader(
+            TodoHasManyTaggings,
+            #run nested_preloader(
+              TaggingBelongsToTag,
+              TagBelongsToUser
+            )
+          )
+        ),
+        UserHasManyTags
+      ),
+      UsersRepo.all()
+    );
+    for user: users_with_the_works {
+      print("user@%: %\n", user, user.email);
+      print("  todos:\n");
+      for todo: user.todos {
+        // print("  todo@%: %, user: %\n", todo, todo.description, todo.user);
+        print("    todo@%: %, %\n", todo, todo.description, <<todo);
+        for tagging: todo.taggings {
+          // print("    tagging@%: %, todo: %\n", tagging.tag, tagging.tag.description, tagging.todo);
+          print("      tagging@%: %, %\n", tagging.tag, tagging.tag.description, <<tagging);
+          print("        user@%: %\n", tagging.tag.user, tagging.tag.user.email);
+        }
+      }
+      print("  tags:\n");
+      for tag: user.tags {
+        // print("  tag@%: %, user: %\n", tag, tag.description, tag.user);
+        print("    tag@%: %, %, (user: %)\n", tag, tag.description, <<tag, tag.user);
       }
     }
   }

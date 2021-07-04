@@ -24,6 +24,21 @@ TodoBelongsToUser :: BelongsTo(
   )
 );
 
+TodoHasManyTaggings :: HasMany(
+  TodosRepo,
+  TaggingsRepo,
+  "todo",
+  "taggings",
+  "todo_id",
+  inverse_of=BelongsTo(
+    TaggingsRepo,
+    TodosRepo,
+    "tagging",
+    "todo",
+    "todo_id"
+  )
+);
+
 TodosCreatedAfter :: SqlWhere(
   SQL_EXPRESSION="created_at > CAST(? AS TIMESTAMP)",
   ARGS_COUNT=1

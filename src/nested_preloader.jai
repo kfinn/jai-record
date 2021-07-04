@@ -17,8 +17,12 @@ NestedPreloader :: struct(
       string_builder: String_Builder;
       defer free_buffers(*string_builder);
 
-      #insert #run sprint("parent_destination_type_is_array := type_info(type_of(parent.Destination.%)).type == .ARRAY;\n", parent.destination_inner_name);
-      if parent_destination_type_is_array {
+      #insert #run () -> string {
+        #insert #run sprint("parent_destination_type := type_info(type_of(parent.Destination.%));\n", parent.destination_inner_name);
+        parent_destination_type_is_array := parent_destination_type.type == .ARRAY;
+        return sprint("parent_destination_type_is_array :: %;\n", parent_destination_type_is_array);
+      }();
+      #if parent_destination_type_is_array {
         print_to_builder(*string_builder, "%: []*PreloadedResult(child);\n", parent.destination_inner_name);
       } else {
         print_to_builder(*string_builder, "%: *PreloadedResult(child);\n", parent.destination_inner_name);

@@ -124,9 +124,9 @@
         is_test_user: SqlWhere("email LIKE 'user_to_select_%'", 0);
 
         preloaded_users := preload(
-          #run compose_preloader(
+          #run composed_preloader(
             UserHasManyTodos,
-            #run compose_preloader(
+            #run composed_preloader(
               UserHasManyTags,
               UserHasManyRecommendedTodos
             )
@@ -258,7 +258,7 @@
         is_test_todo.args[0] = test_todo_ids;
 
         preloaded_todos := preload(
-          #run compose_preloader(
+          #run composed_preloader(
             TodoBelongsToUser,
             TodoHasManyTaggings
           ),

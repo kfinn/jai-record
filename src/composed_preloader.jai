@@ -20,7 +20,7 @@ ComposedPreloader :: struct(
   source_name :: lhs.source_name;
 };
 
-compose_preloader :: ($lhs: Type, $rhs: Type) -> Type {
+composed_preloader :: ($lhs: Type, $rhs: Type) -> Type {
   #assert lhs.Source == rhs.Source;
   #assert lhs.source_name == rhs.source_name;
 
