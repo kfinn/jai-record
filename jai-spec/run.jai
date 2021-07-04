@@ -45,6 +45,4 @@ specs_run :: (workspace_under_test: Workspace) {
     }
   }
   compiler_end_intercept(specs_workspace);
-
-
 };

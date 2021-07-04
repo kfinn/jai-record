@@ -90,8 +90,13 @@ associate_nested_preloader :: (
       nested_preloader.source_name
     );
 
-    #insert #run sprint("parent_destination_type_is_array := type_info(type_of(nested_preloader.parent.Destination.%)).type == .ARRAY;\n", nested_preloader.parent.destination_inner_name);
-    if parent_destination_type_is_array {
+    #insert #run () -> string {
+      #insert #run sprint("parent_destination_type := type_info(type_of(nested_preloader.parent.Destination.%));\n", nested_preloader.parent.destination_inner_name);
+      parent_destination_type_is_array := parent_destination_type.type == .ARRAY;
+      return sprint("parent_destination_type_is_array :: %;\n", parent_destination_type_is_array);
+    }();
+
+    #if parent_destination_type_is_array {
       #insert #run sprint("unnested_records := parent_record.%;\n", nested_preloader.parent.destination_inner_name);
       nested_records := NewArray(unnested_records.count, *PreloadedResult(nested_preloader.child));
       for unnested_record, unnested_record_index: unnested_records {
@@ -108,6 +113,19 @@ associate_nested_preloader :: (
         nested_preloader.parent.destination_inner_name
       );
     } else {
+      #insert #run sprint("unnested_record := parent_record.%;\n", nested_preloader.parent.destination_inner_name);
+      nested_record: *PreloadedResult(nested_preloader.child);
+      for * child_associated_result: child_associated_results {
+        #insert #run sprint("child_associated_result_source := child_associated_result.%;\n", nested_preloader.child.source_name);
+        if child_associated_result_source == unnested_record {
+          nested_record = child_associated_result;
+          break;
+        }
+      }
+      #insert #run sprint(
+        "it.% = nested_record;\n",
+        nested_preloader.parent.destination_inner_name
+      );
     }
   }
 
