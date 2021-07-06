@@ -57,7 +57,6 @@ execute :: (conn: *PGconn, $T: Type, command: string, args: .. Any) -> []T, succ
 send_query :: (conn: *PGconn, command: string, args: []Any) -> *PGresult {
 	pool: Pool;
 	set_allocators(*pool);
-	defer release(*pool);
 
 	new_context := context;
 	new_context.allocator = pool_allocator;

@@ -1,5 +1,5 @@
 #import "Compiler";
-#import "Basic";
+#import "Basic"()(MEMORY_DEBUGGER=true);
 #import "Pool";
 #import "String";
 
