@@ -3,18 +3,17 @@
 #import "Pool";
 #import "String";
 
-#load "repo.jai";
-#load "preloaders.jai";
-#load "composed_preloader.jai";
-#load "nested_preloader.jai";
-#load "has_many.jai";
-#load "belongs_to.jai";
+#load "jai-record-lib/repo.jai";
+#load "jai-record-lib/preloaders.jai";
+#load "jai-record-lib/composed_preloader.jai";
+#load "jai-record-lib/nested_preloader.jai";
+#load "jai-record-lib/has_many.jai";
+#load "jai-record-lib/belongs_to.jai";
 #load "repos/users_repo.jai";
 #load "repos/todos_repo.jai";
 #load "repos/tags_repo.jai";
 #load "repos/taggings_repo.jai";
 
-#load "sql.jai";
 #load "sql/sql_delete.jai";
 #load "sql/sql_execute.jai";
 #load "sql/sql_insert.jai";

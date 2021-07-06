@@ -1,2 +1,0 @@
-SqlFrom :: string;
-
