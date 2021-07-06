@@ -5,7 +5,13 @@ User :: struct {
   email: string;
 }
 
-UsersRepo :: #run repo("users", User);
+MutableUserFields :: struct {
+  created_at: string;
+  updated_at: string;
+  email: string;
+}
+
+UsersRepo :: #run repo("users", User, MutableUserFields);
 
 UserHasManyTodos :: HasMany(
   UsersRepo,

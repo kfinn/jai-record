@@ -18,35 +18,72 @@ WithId :: SqlWhere(
   ARGS_COUNT=1
 );
 
-repo :: ($table_name: string, $Record: Type) -> Type {
+EmptyMutableRecord :: struct {};
+
+repo :: ($table_name: string, $Record: Type, $MutableRecord: Type = EmptyMutableRecord) -> Type {
   IdType :: type_of(Record.id);
   Select :: #run sql_select(Record);
+  Insert :: #run sql_insert(MutableRecord, IdType);
 
   Repo :: struct {
     Select :: Select;
+    Insert :: Insert;
     IdType :: IdType;
     Record :: Record;
+    MutableRecord :: MutableRecord;
     table_name :: table_name;
-    find :: (id: IdType) -> *Select.Record, success: bool {
-      with_id: WithId;
-      with_id.args[0] = id;
-
-      records, all_success := Repo.all(*with_id);
-
-      if !all_success return null, false;
-      if records.count != 1 return null, false;
-      return *records[0], true;
-    };
-    all :: (where: *$Where = null) -> []Select.Record, success: bool {
-      records, success := sql_select_execute(
-        Select,
-        table_name,
-        where
-      );
-      if !success return .[], false;
-      return records, true;
-    };
+    find :: #bake_arguments repo_find(repo=Repo);
+    all :: #bake_arguments repo_all(repo=Repo);
+    save :: #bake_arguments repo_save(repo=Repo);
   };
 
   return Repo;
+}
+
+repo_find :: ($repo: Type, id: repo.IdType) -> *repo.Record, success: bool {
+  with_id: WithId;
+  with_id.args[0] = id;
+
+  records, all_success := repo.all(*with_id);
+
+  if !all_success return null, false;
+  if records.count != 1 return null, false;
+  return *records[0], true;
+}
+
+repo_all :: ($repo: Type, where: *$Where = null) -> []repo.Record, success: bool {
+  records, success := sql_select_execute(
+    repo.Select,
+    repo.table_name,
+    where
+  );
+  if !success return .[], false;
+  return records, true;
+}
+
+repo_save :: ($repo: Type, record: *repo.Record) -> success: bool {
+  if (record.id == 0) {
+    insert: repo.Insert;
+
+    #insert #run () -> string {
+      string_builder: String_Builder;
+      defer free_buffers(*string_builder);
+
+      for member: type_info(repo.MutableRecord).members {
+        print_to_builder(*string_builder, "insert.% = record.%;\n", member.name, member.name);
+      }
+
+      return builder_to_string(*string_builder);
+    }();
+
+    id, success := sql_insert_execute(
+      repo.table_name,
+      *insert
+    );
+    if !success return false;
+    record.id = id;
+    return true;
+  }
+
+  return false;
 }

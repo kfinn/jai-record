@@ -106,6 +106,20 @@ specs_verify :: () {
   assert(!ANY_FAILURES);
 }
 
+NotMatcher :: struct($T: Type) {
+  matcher: T;
+}
+
+not :: (matcher: $T) -> NotMatcher(T) {
+  not_matcher: NotMatcher(T);
+  not_matcher.matcher = matcher;
+  return not_matcher;
+}
+
+matches :: (value: $V, not_matcher: NotMatcher($T)) -> bool {
+  return !matches(value, not_matcher.matcher);
+}
+
 ToAssert :: struct {}
 
 to_assert :: () -> ToAssert {

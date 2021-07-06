@@ -29,18 +29,18 @@ sql_insert :: ($InsertableFields: Type, $IdType: Type) -> Type {
     );
   }();
 
-  to_sql_insert_args :: (insertable_fields: *InsertableFields) -> [..]Any {
+  to_sql_insert_args :: (insertable_fields: *$T) -> [..]Any {
     #insert #run () -> string {
       builder: String_Builder;
       defer free_buffers(*builder);
 
       insertable_fields_type_info := type_info(InsertableFields);
-      print_to_builder(*builder, "result := New([..]Any);\n", insertable_fields_type_info.members.count);
+      print_to_builder(*builder, "result: [..]Any;\n", insertable_fields_type_info.members.count);
       for insertable_fields_type_info.members {
-        print_to_builder(*builder, "array_add(result, insertable_fields.%);\n", it.name);
+        print_to_builder(*builder, "array_add(*result, insertable_fields.%);\n", it.name);
       }
 
-      print_to_builder(*builder, "return <<result;\n");
+      print_to_builder(*builder, "return result;\n");
 
       return builder_to_string(*builder);
     }();
