@@ -61,7 +61,6 @@ sql_insert_execute :: (into: string, insert: *$Insert) -> id: Insert.IdType, suc
   expression_string := sprint("INSERT INTO % % RETURNING id;", into, Insert.SQL_EXPRESSION);
 
   args := Insert.to_sql_insert_args(insert);
-  defer array_free(args);
 
   Result :: struct {
     id: Insert.IdType;

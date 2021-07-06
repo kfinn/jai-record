@@ -25,6 +25,7 @@ nested_describe :: (
   after_all: Code = EMPTY_CODE
 ) #expand {
   description := sprint("% %", `description, description_suffix);
+  describe :: nested_describe;
 
   if before_all != EMPTY_CODE #insert before_all;
   #insert_internal body;
@@ -76,7 +77,7 @@ expect :: (value: $Value, matcher: $MatcherType, loc := #caller_location) #expan
   if matches(value, matcher) return;
 
   ANY_FAILURES = true;
-  print("% failed.\n  Expected it % %, got: %\n%\n", `description, MatcherType, matcher, value, loc);
+  print("Failed expectation: %\n  Expected it % %, got: %\n%\n", `description, MatcherType, matcher, value, loc);
 }
 
 matches :: (value: $Value, matcher: ToEqual(Value)) -> bool {

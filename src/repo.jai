@@ -24,10 +24,12 @@ repo :: ($table_name: string, $Record: Type, $MutableRecord: Type = EmptyMutable
   IdType :: type_of(Record.id);
   Select :: #run sql_select(Record);
   Insert :: #run sql_insert(MutableRecord, IdType);
+  Update :: #run sql_update(MutableRecord);
 
   Repo :: struct {
     Select :: Select;
     Insert :: Insert;
+    Update :: Update;
     IdType :: IdType;
     Record :: Record;
     MutableRecord :: MutableRecord;
@@ -65,17 +67,7 @@ repo_save :: ($repo: Type, record: *repo.Record) -> success: bool {
   if (record.id == 0) {
     insert: repo.Insert;
 
-    #insert #run () -> string {
-      string_builder: String_Builder;
-      defer free_buffers(*string_builder);
-
-      for member: type_info(repo.MutableRecord).members {
-        print_to_builder(*string_builder, "insert.% = record.%;\n", member.name, member.name);
-      }
-
-      return builder_to_string(*string_builder);
-    }();
-
+    copy_mutable_fields(record, *insert.insertable_fields);
     id, success := sql_insert_execute(
       repo.table_name,
       *insert
@@ -83,7 +75,26 @@ repo_save :: ($repo: Type, record: *repo.Record) -> success: bool {
     if !success return false;
     record.id = id;
     return true;
-  }
+  } else {
+    update: repo.Update;
+    where: SqlWhere("id = ?", 1);
+    where.args[0] = record.id;
 
-  return false;
+    copy_mutable_fields(record, *update.updatable_fields);
+    success := sql_update_execute(repo.table_name, *update, *where);
+    return success;
+  }
+}
+
+copy_mutable_fields :: (record: *$Record, mutable_fields: *$MutableFields) {
+  #insert #run () -> string {
+    string_builder: String_Builder;
+    defer free_buffers(*string_builder);
+
+    for member: type_info(MutableFields).members {
+      print_to_builder(*string_builder, "mutable_fields.% = record.%;\n", member.name, member.name);
+    }
+
+    return builder_to_string(*string_builder);
+  }();
 }

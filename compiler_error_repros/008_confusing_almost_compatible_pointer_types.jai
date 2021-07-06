@@ -14,6 +14,8 @@ In workspace #4 ("jai-record_specs"):
 // to 
 // to_sql_insert_args :: (insertable_fields: *$T) -> [..]Any {
 
+// the same thing happened with sql_update, in the comparable procedure
+
 ContainerType :: struct($T: Type, $procedure: (*T) -> string) {
   using contained: *T;
 }

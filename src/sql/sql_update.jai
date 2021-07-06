@@ -74,7 +74,7 @@ sql_update_execute :: (table_name: string, update: *$Update, where: *$SqlWhere) 
 
   args: [Update.ARGS_COUNT + SqlWhere.ARGS_COUNT]Any;
 
-  for Update.to_sql_update_args(update) args[it_index] = it;
+  for Update.to_sql_update_args(*update.updatable_fields) args[it_index] = it;
   if where != null {
     for where.args args[Update.ARGS_COUNT + it_index] = it;
   }
