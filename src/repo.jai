@@ -37,6 +37,7 @@ repo :: ($table_name: string, $Record: Type, $MutableRecord: Type = EmptyMutable
     find :: #bake_arguments repo_find(repo=Repo);
     all :: #bake_arguments repo_all(repo=Repo);
     save :: #bake_arguments repo_save(repo=Repo);
+    delete :: #bake_arguments repo_delete(repo=Repo);
   };
 
   return Repo;
@@ -98,3 +99,10 @@ copy_mutable_fields :: (record: *$Record, mutable_fields: *$MutableFields) {
     return builder_to_string(*string_builder);
   }();
 }
+
+repo_delete :: ($repo: Type, record: *repo.Record) -> success: bool {
+  where: SqlWhere("id = ?", 1);
+  where.args[0] = record.id;
+
+  return sql_delete_execute(repo.table_name, *where);
+};

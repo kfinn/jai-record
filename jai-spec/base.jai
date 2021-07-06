@@ -60,6 +60,13 @@ to_be_empty :: () -> ToBeEmpty {
   return TO_BE_EMPTY_SINGLETON;
 }
 
+TO_BE_NULL_SINGLETON: ToBeNull;
+ToBeNull :: struct {}
+
+to_be_null :: () -> ToBeNull {
+  return TO_BE_NULL_SINGLETON;
+}
+
 TO_BE_EMPTY_SINGLETON: ToBeEmpty;
 ToBeEmpty :: struct {}
 
@@ -101,6 +108,10 @@ matches :: (value: *$Value, matcher: ToBePresent) -> bool {
 
 matches :: (value: []$Value, matcher: ToBeEmpty) -> bool {
   return value.count == 0;
+}
+
+matches :: (value: *$Value, matcher: ToBeNull) -> bool {
+  return value == null;
 }
 
 specs_verify :: () {

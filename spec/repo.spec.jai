@@ -100,4 +100,47 @@
       }
     );
   });
+  describe("delete", #code{
+    describe(
+      "with a persisted record",
+      before_all=#code {
+        connection := jai_record_pg_connection();
+        execute(connection, "BEGIN");
+      },
+      after_all=#code {
+        connection := jai_record_pg_connection();
+        execute(connection, "ROLLBACK");
+      },
+      body=#code{
+        it("deletes the record", #code{
+          connection := jai_record_pg_connection();
+          InsertResult :: struct { id: int; }
+          insert_results := execute(
+            connection,
+            InsertResult,
+            "INSERT INTO users (email) VALUES ('to_delete@test.edu') RETURNING id"
+          );
+          expect(insert_results.count, to_equal(1));
+          user_id := insert_results[0].id;
+
+          User :: struct {
+            id: int;
+            email: string;
+          }
+          TestMutableUserFields :: struct {
+            email: string;
+          }
+          UsersRepo :: #run repo("users", User, TestMutableUserFields);
+
+          user := UsersRepo.find(user_id);
+          expect(user, to_be_present());
+          expect(user.email, to_equal("to_delete@test.edu"));
+          UsersRepo.delete(user);
+
+          user = UsersRepo.find(user_id);
+          expect(user, to_be_null());
+        });
+      }
+    );
+  });
 });
