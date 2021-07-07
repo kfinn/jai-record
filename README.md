@@ -8,3 +8,4 @@ Mostly being built while live streaming on twitch at https://twitch.tv/superkevi
 # Acknowledgements
 
 - postgres code adapted from [`rluba/jai-postgres`](https://github.com/rluba/jai-postgres)
+- vendor/jai-socket is mirrored from [`smari/jai-socket`](https://github.com/smari/jai-socket)
