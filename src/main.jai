@@ -2,6 +2,10 @@
 #import "Basic";
 #import "Pool";
 #import "String";
+#import "POSIX";
+#import "Hash_Table";
+
+#import "jai-socket";
 
 #load "jai-record-lib/repo.jai";
 #load "jai-record-lib/preloaders.jai";
@@ -9,6 +13,7 @@
 #load "jai-record-lib/nested_preloader.jai";
 #load "jai-record-lib/has_many.jai";
 #load "jai-record-lib/belongs_to.jai";
+
 #load "repos/users_repo.jai";
 #load "repos/todos_repo.jai";
 #load "repos/tags_repo.jai";
@@ -23,7 +28,13 @@
 
 #load "postgres/module.jai";
 
+#load "scgi/scgi_server.jai";
+
 main :: () {
+  scgi_server_run();
+}
+
+jai_record_demo :: () {
   {
     all_users, success := UsersRepo.all();
     if success {

@@ -14,8 +14,13 @@ prepare_sql_placeholders_for_args :: (expression: string, args: []Any) -> prepar
       if arg.type.type == .ARRAY {
         arg_array: []Any = <<(cast(*[]Any)arg.value_pointer);
         placeholder_args_count = arg_array.count;
-        for arg_array {
-          array_add(*prepared_args, it);
+        if placeholder_args_count > 0 {
+          for arg_array {
+            array_add(*prepared_args, it);
+          }
+        } else {
+          array_add(*prepared_args, null);
+          placeholder_args_count = 1;
         }
       } else {
         array_add(*prepared_args, arg);

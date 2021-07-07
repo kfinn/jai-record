@@ -5,7 +5,16 @@ services:
       - $JAI_HOME:/jai:ro
       - .:/workspace:rw
     working_dir: /workspace
+    command: ./jai-record
+    expose:
+      - "7000"
   db:
     image: postgres
     environment:
       POSTGRES_PASSWORD: password
+  nginx:
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "7000:80"
