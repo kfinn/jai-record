@@ -8,6 +8,7 @@ services:
     command: bash ./server.sh
     expose:
       - "7000"
+    restart: on-failure
   db:
     image: postgres
     environment:
