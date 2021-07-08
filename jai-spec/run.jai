@@ -11,6 +11,7 @@ specs_run :: (workspace_under_test: Workspace) {
   set_build_options(specs_workspace_options, specs_workspace);
   
   compiler_begin_intercept(specs_workspace);
+
   add_build_file("src/main.jai", specs_workspace);
   add_build_file("jai-spec/base.jai", specs_workspace);
 

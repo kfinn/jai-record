@@ -5,7 +5,7 @@ services:
       - $JAI_HOME:/jai:ro
       - .:/workspace:rw
     working_dir: /workspace
-    command: ./jai-record
+    command: bash ./server.sh
     expose:
       - "7000"
   db:

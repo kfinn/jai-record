@@ -1,11 +1,11 @@
-HOST :: "0.0.0.0";
+HOST :: 0;
 PORT :: 7000;
 
 CONTENT_LENGTH_HEADER_KEY :: "CONTENT_LENGTH";
 SCGI_HEADER_KEY :: "SCGI";
 SCGI_HEADER_VALUE :: "1";
 
-scgi_server_run :: () {
+scgi_server_run :: (handle: (connection_fd: s32) -> () = default_handle) {
   fd := socket(AF_INET, SOCK_STREAM, 0);
   defer close(fd);
 
@@ -20,15 +20,15 @@ scgi_server_run :: () {
 
   print("scgi_server awaiting connections\n");
   while true {
-    connection := accept(fd);
-    handle(connection);
+    connection_fd := accept(fd);
+    handle(connection_fd);
   }
 }
 
-handle :: (connection: s32) {
-  defer close(connection);
+default_handle :: (connection_fd: s32) {
+  defer close(connection_fd);
 
-  headers_string, parse_headers_netstring_success := next_netstring(connection);
+  headers_string, parse_headers_netstring_success := next_netstring(connection_fd);
   if !parse_headers_netstring_success {
     return;
   }
@@ -44,25 +44,25 @@ handle :: (connection: s32) {
     return;
   }
 
-  body, parse_body_netstring_success := next_netstring_interpretation(connection, content_size);
+  body, parse_body_netstring_success := next_netstring_interpretation(connection_fd, content_size);
   if !parse_body_netstring_success {
     return;
   }
 
   response := "Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n42";
-  bytes_written := write(connection, response);
+  bytes_written := write(connection_fd, response);
 }
 
-next_netstring :: (connection: s32) -> []u8, success: bool {
+next_netstring :: (connection_fd: s32) -> []u8, success: bool {
   next_byte: u8;
-  bytes_read := read(connection, *next_byte, size_of(u8));
+  bytes_read := read(connection_fd, *next_byte, size_of(u8));
   netstring_size_bytes: [..]u8;
   defer array_reset(*netstring_size_bytes);
 
   while bytes_read > 0 {
     if next_byte == #char ":" break;
     array_add(*netstring_size_bytes, next_byte);
-    bytes_read = read(connection, *next_byte, size_of(u8));
+    bytes_read = read(connection_fd, *next_byte, size_of(u8));
   }
   if bytes_read == 0 return .[], false;
 
@@ -72,24 +72,24 @@ next_netstring :: (connection: s32) -> []u8, success: bool {
   headers_size, parse_headers_size_success := parse_int(*headers_size_string);
   if !parse_headers_size_success return .[], false;
 
-  result, next_interpretation_success := next_netstring_interpretation(connection, headers_size);
+  result, next_interpretation_success := next_netstring_interpretation(connection_fd, headers_size);
   if !next_interpretation_success {
     return .[], false;
   }
   return result, true;
 }
 
-next_netstring_interpretation :: (connection: s32, count: int) -> []u8, success: bool {
+next_netstring_interpretation :: (connection_fd: s32, count: int) -> []u8, success: bool {
   if count == 0 return .[], true;
 
   result: [..]u8;
 
   next_byte: u8;
-  bytes_read := read(connection, *next_byte, size_of(u8));
+  bytes_read := read(connection_fd, *next_byte, size_of(u8));
   netstring_interpretation_total_bytes_read := bytes_read;
   while bytes_read > 0 && netstring_interpretation_total_bytes_read <= count {
     array_add(*result, next_byte);
-    bytes_read = read(connection, *next_byte, size_of(u8));
+    bytes_read = read(connection_fd, *next_byte, size_of(u8));
     netstring_interpretation_total_bytes_read += bytes_read;
   }
 
