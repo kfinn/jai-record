@@ -49,7 +49,18 @@ default_handle :: (connection_fd: s32) {
     return;
   }
 
-  response := "Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n42";
+  request_uri, request_uri_present := table_find(headers, "REQUEST_URI");
+  response_body: string;
+  if request_uri_present {
+    response_body = handle_request_with_resources(request_uri);
+  } else {
+    response_body = "500";
+  }
+
+  response := sprint(
+    "Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n%",
+    response_body
+  );
   bytes_written := write(connection_fd, response);
 }
 

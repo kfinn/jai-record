@@ -1,5 +1,9 @@
 #import "Basic"()(MEMORY_DEBUGGER=true);
 #import "Compiler";
+#import "String";
+
+#load "src/resources_processor.jai";
+#load "src/notes.jai";
 
 #load "jai-spec/run.jai";
 
@@ -23,18 +27,21 @@
 
   compiler_begin_intercept(target_workspace);
   add_build_file("src/main.jai", target_workspace);
-  
+
+  resources_processor: ResourcesProcessor;
+  resources_processor.workspace = target_workspace;
+
   while true {
     message := compiler_wait_for_message();
     if !message break;
+
+    handle_message(*resources_processor, message);
     if message.kind == .COMPLETE break;
   }
 
   compiler_end_intercept(target_workspace);
 
-  // None of the code in this file is intended to end up in an executable
-  // of any kind. So, we tell the compiler not to make an executable for us:
   build_workspace_options := get_build_options();
-  build_workspace_options.output_type = .NO_OUTPUT;  // No executable for the primary workspace.
+  build_workspace_options.output_type = .NO_OUTPUT;
   set_build_options(build_workspace_options);
 };

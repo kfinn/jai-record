@@ -1,6 +1,8 @@
 #import "Compiler";
 #import "Pool";
 
+#load "../resources_processor.jai";
+
 development_scgi_server_run :: () {
   scgi_server_run(development_handle);
 }
@@ -15,6 +17,7 @@ development_handle :: (connection_fd: s32) {
     handle_workspace := compiler_create_workspace();
     print("created handle_workspace %\n", handle_workspace);
 
+    // TODO: clean up this copypasta from build.jai and server.jai
     handle_workspace_options := get_build_options();
     handle_workspace_options.output_type = .NO_OUTPUT;
 
@@ -26,12 +29,19 @@ development_handle :: (connection_fd: s32) {
     handle_build_string := sprint("#run default_handle(%);\n", connection_fd);
     add_build_string(handle_build_string, handle_workspace);
 
+    resources_processor: ResourcesProcessor;
+    resources_processor.workspace = handle_workspace;
+
     while true {
       message := compiler_wait_for_message();
       if !message break;
+
+      handle_message(*resources_processor, message);
+
       if message.kind == .COMPLETE break;
       if message.kind == .ERROR {
         print("compiler error: %\n", message);
+        close(connection_fd);
         compiler_set_workspace_status(.OK, handle_workspace);
         break;
       }

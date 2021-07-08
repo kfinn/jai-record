@@ -30,6 +30,9 @@
 
 #load "scgi/scgi_server.jai";
 
+#load "controllers/todos_controller.jai";
+#load "notes.jai";
+
 main :: () {
   scgi_server_run();
 }

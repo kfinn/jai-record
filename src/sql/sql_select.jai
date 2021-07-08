@@ -8,29 +8,10 @@ sql_select :: ($Record: Type) -> Type {
     record_type_info := type_info(Record);
 
     for member, member_index: record_type_info.members {
-      sql_expression_note: string;
-      SQL_EXPRESSION_NOTE_PREFIX :: "SqlExpression(";
-      SQL_EXPRESSION_NOTE_SUFFIX :: ")";
-
-      for note: member.notes {
-        if !begins_with(note, SQL_EXPRESSION_NOTE_PREFIX) continue;
-        if !ends_with(note, SQL_EXPRESSION_NOTE_SUFFIX) continue;
-
-        sql_expression_note = note;
-      }
-
+      note_sql_expression, has_sql_expression_note := match_note("SqlExpression(", ")", *member);
       member_sql_expression: string;
-      if sql_expression_note {
-        slice_start_index :: SQL_EXPRESSION_NOTE_PREFIX.count;
-        slice_count := sql_expression_note.count - (SQL_EXPRESSION_NOTE_SUFFIX.count + SQL_EXPRESSION_NOTE_PREFIX.count);
-
-        member_sql_expression_source := slice(
-          sql_expression_note,
-          slice_start_index,
-          slice_count
-        );
-
-        member_sql_expression = sprint("(%) as \"%\"", member_sql_expression_source, member.name);
+      if has_sql_expression_note {
+        member_sql_expression = sprint("(%) as \"%\"", note_sql_expression, member.name);
       } else {
         member_sql_expression = sprint("\"%\"", member.name);
       }
