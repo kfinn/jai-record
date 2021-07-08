@@ -1,0 +1,14 @@
+Hi,
+
+Is there a hard limit on the number of workspaces that can be created and then destroyed in one run of the compiler?
+
+I'm working on implementing development mode code reloading for a web server I'm building in Jai, by creating a new workspace for each web request, and it crashes every time after I've created 41 workspaces.
+
+I created and attached a trivial repro of a program that just creates, compiles, and destroys workspaces forever, and it crashes on my machine after 117 workspaces. I've attached its terminal output too.
+
+Is there a hard limit here that I should work around? Or does it look like a resource leak in my code? Or is there a resource leak in the compiler?
+
+Thanks!
+
+--
+Kevin Finn

@@ -1,0 +1,351 @@
+root@b7197ba792d7:/workspace# jai-linux compiler_error_repros/009_crash_after_creating_many_workspaces.jai
+created workspace: 3
+handled!
+destroyed workspace: 3
+created workspace: 4
+handled!
+destroyed workspace: 4
+created workspace: 5
+handled!
+destroyed workspace: 5
+created workspace: 6
+handled!
+destroyed workspace: 6
+created workspace: 7
+handled!
+destroyed workspace: 7
+created workspace: 8
+handled!
+destroyed workspace: 8
+created workspace: 9
+handled!
+destroyed workspace: 9
+created workspace: 10
+handled!
+destroyed workspace: 10
+created workspace: 11
+handled!
+destroyed workspace: 11
+created workspace: 12
+handled!
+destroyed workspace: 12
+created workspace: 13
+handled!
+destroyed workspace: 13
+created workspace: 14
+handled!
+destroyed workspace: 14
+created workspace: 15
+handled!
+destroyed workspace: 15
+created workspace: 16
+handled!
+destroyed workspace: 16
+created workspace: 17
+handled!
+destroyed workspace: 17
+created workspace: 18
+handled!
+destroyed workspace: 18
+created workspace: 19
+handled!
+destroyed workspace: 19
+created workspace: 20
+handled!
+destroyed workspace: 20
+created workspace: 21
+handled!
+destroyed workspace: 21
+created workspace: 22
+handled!
+destroyed workspace: 22
+created workspace: 23
+handled!
+destroyed workspace: 23
+created workspace: 24
+handled!
+destroyed workspace: 24
+created workspace: 25
+handled!
+destroyed workspace: 25
+created workspace: 26
+handled!
+destroyed workspace: 26
+created workspace: 27
+handled!
+destroyed workspace: 27
+created workspace: 28
+handled!
+destroyed workspace: 28
+created workspace: 29
+handled!
+destroyed workspace: 29
+created workspace: 30
+handled!
+destroyed workspace: 30
+created workspace: 31
+handled!
+destroyed workspace: 31
+created workspace: 32
+handled!
+destroyed workspace: 32
+created workspace: 33
+handled!
+destroyed workspace: 33
+created workspace: 34
+handled!
+destroyed workspace: 34
+created workspace: 35
+handled!
+destroyed workspace: 35
+created workspace: 36
+handled!
+destroyed workspace: 36
+created workspace: 37
+handled!
+destroyed workspace: 37
+created workspace: 38
+handled!
+destroyed workspace: 38
+created workspace: 39
+handled!
+destroyed workspace: 39
+created workspace: 40
+handled!
+destroyed workspace: 40
+created workspace: 41
+handled!
+destroyed workspace: 41
+created workspace: 42
+handled!
+destroyed workspace: 42
+created workspace: 43
+handled!
+destroyed workspace: 43
+created workspace: 44
+handled!
+destroyed workspace: 44
+created workspace: 45
+handled!
+destroyed workspace: 45
+created workspace: 46
+handled!
+destroyed workspace: 46
+created workspace: 47
+handled!
+destroyed workspace: 47
+created workspace: 48
+handled!
+destroyed workspace: 48
+created workspace: 49
+handled!
+destroyed workspace: 49
+created workspace: 50
+handled!
+destroyed workspace: 50
+created workspace: 51
+handled!
+destroyed workspace: 51
+created workspace: 52
+handled!
+destroyed workspace: 52
+created workspace: 53
+handled!
+destroyed workspace: 53
+created workspace: 54
+handled!
+destroyed workspace: 54
+created workspace: 55
+handled!
+destroyed workspace: 55
+created workspace: 56
+handled!
+destroyed workspace: 56
+created workspace: 57
+handled!
+destroyed workspace: 57
+created workspace: 58
+handled!
+destroyed workspace: 58
+created workspace: 59
+handled!
+destroyed workspace: 59
+created workspace: 60
+handled!
+destroyed workspace: 60
+created workspace: 61
+handled!
+destroyed workspace: 61
+created workspace: 62
+handled!
+destroyed workspace: 62
+created workspace: 63
+handled!
+destroyed workspace: 63
+created workspace: 64
+handled!
+destroyed workspace: 64
+created workspace: 65
+handled!
+destroyed workspace: 65
+created workspace: 66
+handled!
+destroyed workspace: 66
+created workspace: 67
+handled!
+destroyed workspace: 67
+created workspace: 68
+handled!
+destroyed workspace: 68
+created workspace: 69
+handled!
+destroyed workspace: 69
+created workspace: 70
+handled!
+destroyed workspace: 70
+created workspace: 71
+handled!
+destroyed workspace: 71
+created workspace: 72
+handled!
+destroyed workspace: 72
+created workspace: 73
+handled!
+destroyed workspace: 73
+created workspace: 74
+handled!
+destroyed workspace: 74
+created workspace: 75
+handled!
+destroyed workspace: 75
+created workspace: 76
+handled!
+destroyed workspace: 76
+created workspace: 77
+handled!
+destroyed workspace: 77
+created workspace: 78
+handled!
+destroyed workspace: 78
+created workspace: 79
+handled!
+destroyed workspace: 79
+created workspace: 80
+handled!
+destroyed workspace: 80
+created workspace: 81
+handled!
+destroyed workspace: 81
+created workspace: 82
+handled!
+destroyed workspace: 82
+created workspace: 83
+handled!
+destroyed workspace: 83
+created workspace: 84
+handled!
+destroyed workspace: 84
+created workspace: 85
+handled!
+destroyed workspace: 85
+created workspace: 86
+handled!
+destroyed workspace: 86
+created workspace: 87
+handled!
+destroyed workspace: 87
+created workspace: 88
+handled!
+destroyed workspace: 88
+created workspace: 89
+handled!
+destroyed workspace: 89
+created workspace: 90
+handled!
+destroyed workspace: 90
+created workspace: 91
+handled!
+destroyed workspace: 91
+created workspace: 92
+handled!
+destroyed workspace: 92
+created workspace: 93
+handled!
+destroyed workspace: 93
+created workspace: 94
+handled!
+destroyed workspace: 94
+created workspace: 95
+handled!
+destroyed workspace: 95
+created workspace: 96
+handled!
+destroyed workspace: 96
+created workspace: 97
+handled!
+destroyed workspace: 97
+created workspace: 98
+handled!
+destroyed workspace: 98
+created workspace: 99
+handled!
+destroyed workspace: 99
+created workspace: 100
+handled!
+destroyed workspace: 100
+created workspace: 101
+handled!
+destroyed workspace: 101
+created workspace: 102
+handled!
+destroyed workspace: 102
+created workspace: 103
+handled!
+destroyed workspace: 103
+created workspace: 104
+handled!
+destroyed workspace: 104
+created workspace: 105
+handled!
+destroyed workspace: 105
+created workspace: 106
+handled!
+destroyed workspace: 106
+created workspace: 107
+handled!
+destroyed workspace: 107
+created workspace: 108
+handled!
+destroyed workspace: 108
+created workspace: 109
+handled!
+destroyed workspace: 109
+created workspace: 110
+handled!
+destroyed workspace: 110
+created workspace: 111
+handled!
+destroyed workspace: 111
+created workspace: 112
+handled!
+destroyed workspace: 112
+created workspace: 113
+handled!
+destroyed workspace: 113
+created workspace: 114
+handled!
+destroyed workspace: 114
+created workspace: 115
+handled!
+destroyed workspace: 115
+created workspace: 116
+handled!
+destroyed workspace: 116
+created workspace: 117
+handled!
+destroyed workspace: 117
+created workspace: 118
+handled!
+destroyed workspace: 118
+created workspace: 119
+Killed
