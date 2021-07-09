@@ -6,6 +6,7 @@
 #import "Hash_Table";
 
 #import "jai-socket";
+#import "uniform";
 
 #load "jai-record-lib/repo.jai";
 #load "jai-record-lib/preloaders.jai";
@@ -29,9 +30,14 @@
 #load "postgres/module.jai";
 
 #load "scgi/scgi_server.jai";
+#load "scgi/draw_routes.jai";
 
 #load "controllers/todos_controller.jai";
+#load "controllers/users_controller.jai";
+#load "controllers/user_tags_controller.jai";
+
 #load "notes.jai";
+#load "routes.jai";
 
 main :: () {
   scgi_server_run();

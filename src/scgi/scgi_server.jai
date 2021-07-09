@@ -1,9 +1,19 @@
 HOST :: 0;
 PORT :: 7000;
 
+REQUEST_URI_HEADER_KEY :: "REQUEST_URI";
+REQUEST_METHOD_HEADER_KEY :: "REQUEST_METHOD";
+REQUEST_METHOD_GET :: "GET";
+
 CONTENT_LENGTH_HEADER_KEY :: "CONTENT_LENGTH";
 SCGI_HEADER_KEY :: "SCGI";
 SCGI_HEADER_VALUE :: "1";
+
+ScgiRequest :: struct {
+  headers: Table(string, string);
+  body: string;
+  connection_fd: s32;
+}
 
 scgi_server_run :: (handle: (connection_fd: s32) -> () = default_handle) {
   fd := socket(AF_INET, SOCK_STREAM, 0);
@@ -44,24 +54,27 @@ default_handle :: (connection_fd: s32) {
     return;
   }
 
-  body, parse_body_netstring_success := next_netstring_interpretation(connection_fd, content_size);
+  body_bytes, parse_body_netstring_success := next_netstring_interpretation(connection_fd, content_size);
   if !parse_body_netstring_success {
     return;
   }
+  body: string;
+  body.count = body_bytes.count;
+  body.data = body_bytes.data;
 
   request_uri, request_uri_present := table_find(headers, "REQUEST_URI");
-  response_body: string;
-  if request_uri_present {
-    response_body = handle_request_with_resources(request_uri);
-  } else {
-    response_body = "500";
-  }
 
-  response := sprint(
-    "Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n%",
-    response_body
-  );
-  bytes_written := write(connection_fd, response);
+  request: ScgiRequest;
+  request.headers = headers;
+  request.body = body;
+  request.connection_fd = connection_fd;
+  handled := handle_request_with_resources(request);
+
+  if !handled {
+    response := "Status: 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found";
+    bytes_written := write(connection_fd, response);
+    assert(bytes_written == response.count);
+  }
 }
 
 next_netstring :: (connection_fd: s32) -> []u8, success: bool {

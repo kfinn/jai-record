@@ -36,14 +36,9 @@ specs_run :: (workspace_under_test: Workspace) {
 
   add_build_string("#run specs_verify();", specs_workspace);
 
-  resources_processor: ResourcesProcessor;
-  resources_processor.workspace = specs_workspace;
-
   while true {
     message := compiler_wait_for_message();
     if !message break;
-
-    handle_message(*resources_processor, message);
 
     if message.kind == {
       case .ERROR;

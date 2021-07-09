@@ -43,7 +43,7 @@ repo :: ($table_name: string, $Record: Type, $MutableRecord: Type = EmptyMutable
   return Repo;
 }
 
-repo_find :: ($repo: Type, id: repo.IdType) -> *repo.Record, success: bool {
+repo_find :: ($repo: Type, id: $T) -> *repo.Record, success: bool {
   with_id: WithId;
   with_id.args[0] = id;
 

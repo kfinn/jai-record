@@ -2,7 +2,6 @@
 #import "Compiler";
 #import "String";
 
-#load "src/resources_processor.jai";
 #load "src/notes.jai";
 
 #load "jai-spec/run.jai";
@@ -28,14 +27,10 @@
   compiler_begin_intercept(target_workspace);
   add_build_file("src/main.jai", target_workspace);
 
-  resources_processor: ResourcesProcessor;
-  resources_processor.workspace = target_workspace;
-
   while true {
     message := compiler_wait_for_message();
     if !message break;
 
-    handle_message(*resources_processor, message);
     if message.kind == .COMPLETE break;
   }
 
