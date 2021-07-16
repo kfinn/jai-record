@@ -47,22 +47,18 @@ TodosController :: struct {
   }
 
   update :: (request: ScgiRequest, todo_id: string) {
-    print("update!\n");
     Params :: struct {
       todo: struct {
         completed_at: string;
       }
     }
-    print("about to parse: %\n", request.body);
     params, json_parse_success := json_parse_string(request.body, Params);
     if !json_parse_success {
-      print("!json_parse_success\n");
       response := sprint("Status: 422 Unprocessable Entity\r\nContent-Type: text/plan\r\n\r\nUnprocessable Entity");
       bytes_written := write(request.connection_fd, response);
       assert(bytes_written == response.count);
       return;
     }
-    print("parsed: %\n", params);
 
     todo := TodosRepo.find(todo_id);
     if (!todo) {
