@@ -7,7 +7,15 @@ Todo :: struct {
   updated_at: string;
 }
 
-TodosRepo :: #run repo("todos", Todo);
+MutableTodoFields :: struct {
+  user_id: int;
+  description: string;
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+TodosRepo :: #run repo("todos", Todo, MutableTodoFields);
 
 TodoBelongsToUser :: BelongsTo(
   TodosRepo,

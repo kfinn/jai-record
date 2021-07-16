@@ -1,5 +1,5 @@
 TodosController :: struct {
-  index :: (connection_fd: s32) {
+  index :: (request: ScgiRequest) {
     response_builder: String_Builder;
     defer free_buffers(*response_builder);
 
@@ -12,7 +12,80 @@ TodosController :: struct {
 
     response_body := builder_to_string(*response_builder);
     response := sprint("Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
-    bytes_written := write(connection_fd, response);
+    bytes_written := write(request.connection_fd, response);
     assert(bytes_written == response.count);
+  }
+
+  show :: (request: ScgiRequest, todo_id: string) {
+    todo := TodosRepo.find(todo_id);
+    if (!todo) {
+      response := sprint("Status: 404 Not Found\r\nContent-Type: text/plan\r\n\r\nNot Found");
+      bytes_written := write(request.connection_fd, response);
+      assert(bytes_written == response.count);
+      return;
+    }
+
+    response_builder: String_Builder;
+    defer free_buffers(*response_builder);
+
+    print_to_builder(*response_builder, "todo:\n");
+    print_to_builder(*response_builder, "%\n", todo.description);
+    if todo.completed_at {
+      print_to_builder(*response_builder, "completed: %\n", todo.completed_at);
+    } else {
+      print_to_builder(*response_builder, "not completed\n");
+    }
+
+    response_body := builder_to_string(*response_builder);
+    response := sprint("Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
+    bytes_written := write(request.connection_fd, response);
+    assert(bytes_written == response.count);
+  }
+
+  PatchParams :: struct {
+    completed_at: string;
+  }
+
+  update :: (request: ScgiRequest, todo_id: string) {
+    print("update!\n");
+    Params :: struct {
+      todo: struct {
+        completed_at: string;
+      }
+    }
+    print("about to parse: %\n", request.body);
+    params, json_parse_success := json_parse_string(request.body, Params);
+    if !json_parse_success {
+      print("!json_parse_success\n");
+      response := sprint("Status: 422 Unprocessable Entity\r\nContent-Type: text/plan\r\n\r\nUnprocessable Entity");
+      bytes_written := write(request.connection_fd, response);
+      assert(bytes_written == response.count);
+      return;
+    }
+    print("parsed: %\n", params);
+
+    todo := TodosRepo.find(todo_id);
+    if (!todo) {
+      response := sprint("Status: 404 Not Found\r\nContent-Type: text/plan\r\n\r\nNot Found");
+      bytes_written := write(request.connection_fd, response);
+      assert(bytes_written == response.count);
+      return;
+    }
+
+    if params.todo.completed_at {
+      todo.completed_at = params.todo.completed_at;
+    } else {
+      todo.completed_at = "NULL";
+    }
+
+    if TodosRepo.save(todo) {
+      response :: "Status: 200 OK\r\n\r\n";
+      bytes_written := write(request.connection_fd, response);
+      assert(bytes_written == response.count);
+    } else {
+      response :: "Status: 422 Unprocessable Entity\r\n\r\n";
+      bytes_written := write(request.connection_fd, response);
+      assert(bytes_written == response.count);
+    }
   }
 }

@@ -1,5 +1,5 @@
 UserTagsController :: struct {
-  index :: (connection_fd: s32, user_id: string) {
+  index :: (request: ScgiRequest, user_id: string) {
     response_builder: String_Builder;
     defer free_buffers(*response_builder);
 
@@ -15,7 +15,7 @@ UserTagsController :: struct {
 
     response_body := builder_to_string(*response_builder);
     response := sprint("Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
-    bytes_written := write(connection_fd, response);
+    bytes_written := write(request.connection_fd, response);
     assert(bytes_written == response.count);
   }
 };

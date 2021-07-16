@@ -49,7 +49,7 @@ draw_routes :: ($block: Code) -> string {
       print_to_builder(*`routes_builder, "    assert(compile_pattern_success, \"failed to compile route pattern\");\n");
       print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, index_pattern);\n");
       print_to_builder(*`routes_builder, "    if matched && request_method == REQUEST_METHOD_GET {\n");
-      print_to_builder(*`routes_builder, "      %.index(request.connection_fd", controller_type_info.name);
+      print_to_builder(*`routes_builder, "      %.index(request", controller_type_info.name);
       for id_param_index: 1..id_params_count {
         print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
       }
@@ -69,7 +69,27 @@ draw_routes :: ($block: Code) -> string {
       print_to_builder(*`routes_builder, "    assert(compile_pattern_success, \"failed to compile route pattern\");\n");
       print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, show_pattern);\n");
       print_to_builder(*`routes_builder, "    if matched && request_method == REQUEST_METHOD_GET {\n");
-      print_to_builder(*`routes_builder, "      %.show(request.connection_fd", controller_type_info.name);
+      print_to_builder(*`routes_builder, "      %.show(request", controller_type_info.name);
+      for id_param_index: 1..show_id_params_count {
+        print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
+      }
+      print_to_builder(*`routes_builder, ");\n");
+      print_to_builder(*`routes_builder, "      return true;\n");
+      print_to_builder(*`routes_builder, "    }\n");
+      print_to_builder(*`routes_builder, "  }\n");
+    }
+
+    update_member := find_type_info_struct_member(controller_type_info, "update");
+    if update_member {
+      patch_route_pattern := sprint("%/([^/]+)$", route_pattern_prefix);
+      show_id_params_count := id_params_count + 1;
+
+      print_to_builder(*`routes_builder, "  {\n");
+      print_to_builder(*`routes_builder, "    patch_pattern, compile_pattern_success := compile(\"%/?$\");\n", patch_route_pattern);
+      print_to_builder(*`routes_builder, "    assert(compile_pattern_success, \"failed to compile route pattern\");\n");
+      print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, patch_pattern);\n");
+      print_to_builder(*`routes_builder, "    if matched && request_method == REQUEST_METHOD_PATCH {\n");
+      print_to_builder(*`routes_builder, "      %.update(request", controller_type_info.name);
       for id_param_index: 1..show_id_params_count {
         print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
       }

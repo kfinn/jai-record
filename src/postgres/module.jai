@@ -66,8 +66,14 @@ send_query :: (conn: *PGconn, command: string, args: []Any) -> *PGresult {
 		param_values := NewArray(args.count, *u8, initialized = false);
 
 		for arg, arg_index: args {
-      encoded_arg := sprint("%", arg);
-      param_values[arg_index] = to_c_string(encoded_arg);
+      if (
+        arg.type == type_info(string) &&
+        (<<cast(*string)arg.value_pointer) == "NULL"
+      ) {
+        param_values[arg_index] = null;
+      } else {
+        param_values[arg_index] = to_c_string(sprint("%", arg));
+      }
 		}
 
 		c_command := to_c_string(command);

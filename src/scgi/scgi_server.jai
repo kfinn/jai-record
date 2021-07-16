@@ -4,6 +4,7 @@ PORT :: 7000;
 REQUEST_URI_HEADER_KEY :: "REQUEST_URI";
 REQUEST_METHOD_HEADER_KEY :: "REQUEST_METHOD";
 REQUEST_METHOD_GET :: "GET";
+REQUEST_METHOD_PATCH :: "PATCH";
 
 CONTENT_LENGTH_HEADER_KEY :: "CONTENT_LENGTH";
 SCGI_HEADER_KEY :: "SCGI";
@@ -54,8 +55,9 @@ default_handle :: (connection_fd: s32) {
     return;
   }
 
-  body_bytes, parse_body_netstring_success := next_netstring_interpretation(connection_fd, content_size);
-  if !parse_body_netstring_success {
+  body_bytes := NewArray(content_size, u8, initialized=false);
+  body_bytes_read := read(connection_fd, body_bytes.data, cast(u64)content_size * size_of(u8));
+  if body_bytes_read != content_size {
     return;
   }
   body: string;
@@ -79,48 +81,36 @@ default_handle :: (connection_fd: s32) {
 
 next_netstring :: (connection_fd: s32) -> []u8, success: bool {
   next_byte: u8;
-  bytes_read := read(connection_fd, *next_byte, size_of(u8));
-  netstring_size_bytes: [..]u8;
-  defer array_reset(*netstring_size_bytes);
+  netstring_length_bytes_read := read(connection_fd, *next_byte, size_of(u8));
+  netstring_length_bytes: [..]u8;
+  defer array_reset(*netstring_length_bytes);
 
-  while bytes_read > 0 {
+  while netstring_length_bytes_read > 0 {
     if next_byte == #char ":" break;
-    array_add(*netstring_size_bytes, next_byte);
-    bytes_read = read(connection_fd, *next_byte, size_of(u8));
+    array_add(*netstring_length_bytes, next_byte);
+    netstring_length_bytes_read = read(connection_fd, *next_byte, size_of(u8));
   }
-  if bytes_read == 0 return .[], false;
+  if netstring_length_bytes_read == 0 return .[], false;
 
-  headers_size_string: string;
-  headers_size_string.count = netstring_size_bytes.count;
-  headers_size_string.data = netstring_size_bytes.data;
-  headers_size, parse_headers_size_success := parse_int(*headers_size_string);
-  if !parse_headers_size_success return .[], false;
+  netstring_length_string: string;
+  netstring_length_string.count = netstring_length_bytes.count;
+  netstring_length_string.data = netstring_length_bytes.data;
+  netstring_length, parse_netstring_length_success := parse_int(*netstring_length_string);
+  if !parse_netstring_length_success return .[], false;
 
-  result, next_interpretation_success := next_netstring_interpretation(connection_fd, headers_size);
-  if !next_interpretation_success {
-    return .[], false;
-  }
-  return result, true;
-}
+  netstring_interpretation := NewArray(netstring_length, u8, initialized=false);
+  netstring_interpretation_bytes_read := read(
+    connection_fd,
+    netstring_interpretation.data,
+    size_of(u8) * cast(u64)netstring_length
+  );
+  if netstring_interpretation_bytes_read != netstring_length return .[], false;
 
-next_netstring_interpretation :: (connection_fd: s32, count: int) -> []u8, success: bool {
-  if count == 0 return .[], true;
+  trailing_comma_byte: u8;
+  trailing_comma_bytes_read := read(connection_fd, *trailing_comma_byte, size_of(u8));
+  if trailing_comma_bytes_read != 1 || trailing_comma_byte != #char "," return .[] ,false;
 
-  result: [..]u8;
-
-  next_byte: u8;
-  bytes_read := read(connection_fd, *next_byte, size_of(u8));
-  netstring_interpretation_total_bytes_read := bytes_read;
-  while bytes_read > 0 && netstring_interpretation_total_bytes_read <= count {
-    array_add(*result, next_byte);
-    bytes_read = read(connection_fd, *next_byte, size_of(u8));
-    netstring_interpretation_total_bytes_read += bytes_read;
-  }
-
-  if bytes_read != 1 return .[], false;
-  if next_byte != #char "," return .[], false;
-  
-  return result, true;
+  return netstring_interpretation, true;
 }
 
 parse_headers :: (headers_netstring: []u8) -> Table(string, string), success: bool {
