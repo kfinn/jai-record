@@ -1,5 +1,5 @@
 services:
-  workspace:
+  webapp:
     image: jai-workspace
     volumes:
       - $JAI_HOME:/jai:ro
@@ -8,6 +8,13 @@ services:
     command: bash ./server.sh
     expose:
       - "7000"
+    restart: on-failure
+  workspace:
+    image: jai-workspace
+    volumes:
+      - $JAI_HOME:/jai:ro
+      - .:/workspace:rw
+    working_dir: /workspace
     restart: on-failure
   db:
     image: postgres

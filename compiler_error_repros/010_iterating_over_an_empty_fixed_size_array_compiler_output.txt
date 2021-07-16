@@ -1,0 +1,20 @@
+root@81a5cb87628e:/workspace# jai-linux compiler_error_repros/010_iterating_over_an_empty_fixed_size_array.jai
+
+In workspace #2 ("Target Program"):
+/workspace/compiler_error_repros/010_iterating_over_an_empty_fixed_size_array.jai:21,5: Info: While expanding macro 'macro_on_an_array' here...
+
+    {
+      array :: int.[];
+      macro_on_an_array();
+
+/workspace/compiler_error_repros/010_iterating_over_an_empty_fixed_size_array.jai:6,5: Error: Attempt to subscript a fixed-size array that has 0 elements.
+
+    if `array {
+      print("% elements:\n", `array.count);
+      for `array {
+
+/workspace/compiler_error_repros/010_iterating_over_an_empty_fixed_size_array.jai:20,17: Info: Here is the declaration of the 0-element array.
+
+    }
+    {
+      array :: int.[];

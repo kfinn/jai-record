@@ -1,0 +1,11 @@
+Hi,
+
+I think I spotted an issue with a change introduced in compiler v70. I have some code that uses a macro to depend on an array that's either an empty fixed-size array or a variable size array with values in it, and iterates over the values in the polymorphic array. In the empty fixed-size case, I used to see what I thought was correct behavior of a no-op, but now I get an error.
+
+I suspect this has to do with the "Better error message when subscripting a fixed array that has 0 elements." change.
+
+I spotted what might be a valuable difference in where this polymorphism is allowed and where it isn't: if I define a procedure that accepts a `[]$T` argument, I can iterate over an empty fixed-size array passed in as that argument. But if I define a procedure that accepts a `$T` argument, or use a macro like my example program does, I can no longer iterate over an empty fixed-size array.
+
+Does this look like a compiler bug? Or is the compiler working as intended, and I shouldn't use empty fixed-size arrays this way?
+
+Thanks!
