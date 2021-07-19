@@ -27,16 +27,18 @@ sql_select :: ($Record: Type) -> Type {
   return SqlSelect(SQL_EXPRESSION=sql_expression, Record=Record);
 };
 
-sql_select_execute :: ($Select: Type, $sql_from: string, where: *$T) -> []Select.Record, success: bool {
+sql_select_execute :: ($Select: Type, $sql_from: string) -> []Select.Record, success: bool {
+  results, success := sql_select_execute(Select, sql_from, EmptySqlWhere.{});
+  return results, success;
+}
+
+sql_select_execute :: ($Select: Type, $sql_from: string, where: $Where) -> []Select.Record, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return Select.Record.[], false;
 
   expression_string := sql_select_to_string(Select.SQL_EXPRESSION, sql_from, where);
 
-  args: []Any;
-  #if type_of(where) != *void {
-    args = where.args;
-  }
+  args := where.args;
 
   prepared_sql, prepared_args := prepare_sql_placeholders_for_args(expression_string, args);
 
@@ -45,7 +47,7 @@ sql_select_execute :: ($Select: Type, $sql_from: string, where: *$T) -> []Select
   return results, true;
 }
 
-sql_select_to_string :: ($select: string, $from: string, where: *$Where) -> string {
+sql_select_to_string :: ($select: string, $from: string, where: $Where) -> string {
   return #run () -> string {
     string_builder: String_Builder;
     defer free_buffers(*string_builder);
@@ -53,7 +55,7 @@ sql_select_to_string :: ($select: string, $from: string, where: *$Where) -> stri
     print_to_builder(*string_builder, "SELECT % ", select);
     print_to_builder(*string_builder, "FROM % ", from);
 
-    where_string := static_sql_where_to_string(Where);
+    where_string := Where.to_string();
     if where_string != "" {
       print_to_builder(*string_builder, "WHERE % ", where_string);
     }

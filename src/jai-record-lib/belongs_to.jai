@@ -38,7 +38,7 @@ fetch_belongs_to :: (
   id_in: SqlWhere("id IN (?)", 1);
   id_in.args[0] = destination_ids;
 
-  return belongs_to.destination_repo.all(*id_in);
+  return belongs_to.destination_repo.where(*id_in);
 }
 
 associate_belongs_to :: (

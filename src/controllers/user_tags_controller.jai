@@ -9,7 +9,7 @@ UserTagsController :: struct {
 
     with_user: SqlWhere("user_id = ?", 1);
     with_user.args[0] = user.id;
-    for tag: TagsRepo.all(*with_user) {
+    for tag: TagsRepo.where(*with_user) {
       print_to_builder(*response_builder, "  tag: %\n", tag.description);
     }
 

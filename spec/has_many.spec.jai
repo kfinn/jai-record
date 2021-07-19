@@ -84,7 +84,7 @@
 
         test_users_with_test_todos := preload(
           TestUserHasManyTestTodos,
-          TestUsersRepo.all(*is_test_user)
+          TestUsersRepo.where(*is_test_user)
         );
 
         expect(test_users_with_test_todos.count, to_equal(3));
@@ -196,7 +196,7 @@
 
         test_users_with_test_todos := preload(
           TestUserHasManyTestTodos,
-          TestUsersRepo.all(*is_test_user)
+          TestUsersRepo.where(*is_test_user)
         );
 
         expect(test_users_with_test_todos.count, to_equal(1));

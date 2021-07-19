@@ -86,7 +86,7 @@
 
         test_todos_with_test_users := preload(
           TestTodoBelongsToTestUser,
-          TestTodosRepo.all(*is_test_todo)
+          TestTodosRepo.where(*is_test_todo)
         );
 
         expect(test_todos_with_test_users.count, to_equal(3));
@@ -203,7 +203,7 @@
 
         test_todos_with_test_users := preload(
           TestTodoBelongsToTestUser,
-          TestTodosRepo.all(*is_test_todo)
+          TestTodosRepo.where(*is_test_todo)
         );
 
         test_todo := test_todos_with_test_users[0];

@@ -11,8 +11,8 @@
       and := sql_where_and(*lhs, *rhs);
 
       expect(
-        sql_where_to_string(*and),
-        to_equal("((id = ?) AND (birthday BETWEEN ? AND ?))")
+        type_of(and).to_string(),
+        to_equal("(id = ?) AND (birthday BETWEEN ? AND ?)")
       );
 
       expect(and.args.count, to_equal(3));
@@ -46,9 +46,9 @@
       );
 
       expect(
-        sql_where_to_string(*and),
+        type_of(and).to_string(),
         to_equal(
-          "((id = ?) AND (((birthday BETWEEN ? AND ?) AND (((favorite_color_id = ?) AND (least_favorite_color_id = ?))))))"
+          "(id = ?) AND ((birthday BETWEEN ? AND ?) AND ((favorite_color_id = ?) AND (least_favorite_color_id = ?)))"
         )
       );
       expect(and.args.count, to_equal(5));

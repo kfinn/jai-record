@@ -37,7 +37,7 @@ fetch_has_many :: (
   foreign_key_in: SqlWhere(#run sprint("% IN (?)", has_many.foreign_key), 1);
   foreign_key_in.args[0] = source_ids;
 
-  return has_many.destination_repo.all(*foreign_key_in);
+  return has_many.destination_repo.where(*foreign_key_in);
 }
 
 associate_has_many :: (

@@ -111,7 +111,7 @@
             TodoHasManyTaggings,
             TaggingBelongsToTag,
           ),
-          TodosRepo.all(*is_test_todo)
+          TodosRepo.where(*is_test_todo)
         );
 
         expect(todos_with_taggings_and_tags.count, to_equal(2));
@@ -225,7 +225,7 @@
             TagBelongsToUser,
             UserHasManyTodods
           ),
-          TagsRepo.all(*is_test_tag)
+          TagsRepo.where(*is_test_tag)
         );
 
         expect(tags_with_users_and_todos.count, to_equal(2));

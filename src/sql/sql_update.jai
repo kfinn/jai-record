@@ -55,7 +55,11 @@ sql_update :: ($UpdatableFields: Type) -> Type {
   );
 }
 
-sql_update_execute :: (table_name: string, update: *$Update, where: *$SqlWhere) -> success: bool {
+sql_update_execute :: (table_name: string, update: *$Update) -> success: bool {
+  return sql_update_execute(table_name, update, EmptySqlWhere.{});
+}
+
+sql_update_execute :: (table_name: string, update: *$Update, where: $SqlWhere) -> success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return false;
 
@@ -65,7 +69,7 @@ sql_update_execute :: (table_name: string, update: *$Update, where: *$SqlWhere) 
   print_to_builder(*expression_string_builder, "UPDATE % ", table_name);
   print_to_builder(*expression_string_builder, "SET % ", Update.SQL_EXPRESSION);
 
-  where_string := sql_where_to_string(where);
+  where_string := SqlWhere.to_string();
   if where_string != "" {
     print_to_builder(*expression_string_builder, "WHERE % ", where_string);
   }

@@ -32,7 +32,7 @@ UsersController :: struct {
 
     with_user: SqlWhere("user_id = ?", 1);
     with_user.args[0] = user.id;
-    for todo: TodosRepo.all(*with_user) {
+    for todo: TodosRepo.where(*with_user) {
       print_to_builder(*response_builder, "  todo[%]: %\n", todo.id, todo.description);
     }
 

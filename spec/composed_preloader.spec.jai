@@ -131,7 +131,7 @@
               UserHasManyRecommendedTodos
             )
           ),
-          UsersRepo.all(*is_test_user)
+          UsersRepo.where(*is_test_user)
         );
 
         expect(preloaded_users.count, to_equal(2));
@@ -262,7 +262,7 @@
             TodoBelongsToUser,
             TodoHasManyTaggings
           ),
-          TodosRepo.all(*is_test_todo)
+          TodosRepo.where(*is_test_todo)
         );
 
         expect(preloaded_todos.count, to_equal(2));
