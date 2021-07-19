@@ -34,7 +34,7 @@ specs_run :: (workspace_under_test: Workspace) {
     add_build_file(file, specs_workspace);
   }
 
-  add_build_string("#run specs_verify();", specs_workspace);
+  specs_verified := false;
 
   while true {
     message := compiler_wait_for_message();
@@ -45,6 +45,12 @@ specs_run :: (workspace_under_test: Workspace) {
         compiler_report("Tests failed");
       case .COMPLETE;
         break;
+      case .PHASE;
+        phase_message := cast(*Message_Phase)message;
+        if phase_message.phase == .TYPECHECKED_ALL_WE_CAN && !specs_verified {
+          specs_verified = true;
+          add_build_string("#run specs_verify();", specs_workspace);
+        }
     }
   }
   compiler_end_intercept(specs_workspace);
