@@ -39,6 +39,7 @@
 
 #load "notes.jai";
 #load "routes.jai";
+#load "type_infos.jai";
 
 main :: () {
   scgi_server_run();

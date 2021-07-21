@@ -80,6 +80,16 @@ ToContainExactly :: struct($T: Type) {
   values: []T;
 }
 
+to_begin_with :: (prefix: string) -> ToBeginWith {
+  matcher: ToBeginWith;
+  matcher.prefix = prefix;
+  return matcher;
+}
+
+ToBeginWith :: struct {
+  prefix: string;
+}
+
 expect :: (value: $Value, matcher: $MatcherType, loc := #caller_location) #expand {
   if matches(value, matcher) return;
 
@@ -112,6 +122,10 @@ matches :: (value: []$Value, matcher: ToBeEmpty) -> bool {
 
 matches :: (value: *$Value, matcher: ToBeNull) -> bool {
   return value == null;
+}
+
+matches :: (value: $Value, matcher: ToBeginWith) -> bool {
+  return begins_with(value, matcher.prefix);
 }
 
 specs_verify :: () {
