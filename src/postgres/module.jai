@@ -118,8 +118,9 @@ execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string,
               placeholder_type_info = member.type;
             }
 
-            if placeholder_type_info.type == .ARRAY {
-              print_to_builder(*string_builder, "for arg: args.% {\n", placeholder_path);
+            is_array := placeholder_type_info.type == .ARRAY;
+            if is_array {
+              print_to_builder(*string_builder, "for arg, arg_index: args.% {\n", placeholder_path);
               placeholder_array_type_info := cast(*Type_Info_Array)placeholder_type_info;
               placeholder_type_info = placeholder_array_type_info.element_type;
             } else {
@@ -138,7 +139,11 @@ execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string,
               print_to_builder(*string_builder, "  arg_value := to_c_string(sprint(\"%%\", arg));\n");
               print_to_builder(*string_builder, "  array_add(*placeholder_values, arg_value);\n");
             }
-            print_to_builder(*string_builder, "  print_to_builder(*query_builder, \"$%% \", next_placeholder_index);\n");
+            print_to_builder(*string_builder, "  print_to_builder(*query_builder, \"$%%\", next_placeholder_index);\n");
+
+            if is_array {
+              print_to_builder(*string_builder, "  if arg_index < args.%.count - 1 print_to_builder(*query_builder, \", \");\n", placeholder_path);
+            }
             print_to_builder(*string_builder, "  next_placeholder_index += 1;\n");
 
             print_to_builder(*string_builder, "}\n");
@@ -148,6 +153,7 @@ execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string,
       return builder_to_string(*string_builder);
     }();
 
+    print("%\n", builder_to_string(*query_builder));
     c_command := to_c_string(builder_to_string(*query_builder));
 
     exec_result = PQexecParams(
