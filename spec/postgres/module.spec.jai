@@ -1,6 +1,6 @@
 #run describe("postgres", #code{
   describe(
-    "execute_new",
+    "execute_with_struct_args",
     before_all=#code {
       connection := jai_record_pg_connection();
       execute(connection, "BEGIN");
@@ -20,7 +20,7 @@
           updated_at: string;
         }
 
-        insert_users_results := execute_new(
+        insert_users_results := execute_with_struct_args(
           connection,
           User,
           "INSERT INTO users (email) VALUES ('some_email@whatever.gov') RETURNING id, email, created_at, updated_at"
@@ -50,7 +50,7 @@
         first_todo_creation.completed_at = null;
 
         {
-          insert_todos_results := execute_new(
+          insert_todos_results := execute_with_struct_args(
             connection,
             Todo,
             #string SQL
@@ -73,7 +73,7 @@
         second_todo_creation.completed_at = *completed_at;
 
         {
-          insert_todos_results := execute_new(
+          insert_todos_results := execute_with_struct_args(
             connection,
             Todo,
             #string SQL

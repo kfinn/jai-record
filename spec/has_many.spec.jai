@@ -45,7 +45,7 @@
 
         InsertResult :: struct { id: int; }
 
-        insert_results := execute(
+        insert_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
@@ -168,7 +168,7 @@
 
         InsertResult :: struct { id: int; }
 
-        insert_results := execute(
+        insert_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL

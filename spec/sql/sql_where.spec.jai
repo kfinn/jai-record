@@ -66,7 +66,7 @@
         execute(connection, "BEGIN");
 
         UserInsertResult :: struct { id: int; };
-        user_insert_result := execute(
+        user_insert_result := execute_with_struct_args(
           connection,
           UserInsertResult,
           #string SQL

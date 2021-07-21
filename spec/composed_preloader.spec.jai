@@ -66,7 +66,7 @@
 
         InsertResult :: struct { id: int; }
 
-        insert_users_results := execute(
+        insert_users_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
@@ -196,7 +196,7 @@
 
         InsertResult :: struct { id: int; }
 
-        insert_users_results := execute(
+        insert_users_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
@@ -206,34 +206,34 @@
             RETURNING id
           SQL
         );
-        user_id := insert_users_results[0].id;
+        user := insert_users_results[0];
 
-        insert_todos_results := execute(
+        insert_todos_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'todo with taggings'),
-              ($1, 'todo without taggings')
+              (:id, 'todo with taggings'),
+              (:id, 'todo without taggings')
             RETURNING id
           SQL,
-          user_id,
+          user
         );
         todo_with_taggings_id := insert_todos_results[0].id;
         todo_without_taggings_id := insert_todos_results[1].id;
 
-        insert_tags_result := execute(
+        insert_tags_result := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
             INSERT INTO tags (user_id, description)
             VALUES
-              ($1, 'tag 1'),
-              ($1, 'tag 2')
+              (:id, 'tag 1'),
+              (:id, 'tag 2')
             RETURNING id
           SQL,
-          user_id
+          user
         );
         tag_1_id := insert_tags_result[0].id;
         tag_2_id := insert_tags_result[1].id;

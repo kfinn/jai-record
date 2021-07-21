@@ -62,7 +62,7 @@
         expect(jai_record_pg_connection_success, to_equal(true));
 
         ExecuteInsertResult :: struct { id: int; };
-        execute_insert_result, execute_insert_success := execute(
+        execute_insert_result, execute_insert_success := execute_with_struct_args(
           connection,
           ExecuteInsertResult,
           #string SQL
@@ -77,8 +77,8 @@
         expect(execute_insert_success, to_equal(true));
         expect(execute_insert_result.count, to_equal(2));
 
-        user_to_update_id := execute_insert_result[0].id;
-        user_not_to_update_id := execute_insert_result[1].id;
+        user_to_update := execute_insert_result[0];
+        user_not_to_update := execute_insert_result[1];
 
         UserMutableFields :: struct {
           email: string;
@@ -95,7 +95,7 @@
         updated_user.email = "some_new@email.org";
 
         with_id: WithId;
-        with_id.args[0] = user_to_update_id;
+        with_id.args[0] = user_to_update.id;
 
         sql_update_execute(
           "users",
@@ -104,13 +104,13 @@
         );
 
         {
-          updated_results, success := execute(
+          updated_results, success := execute_with_struct_args(
             connection,
             User,
             #string SQL
-              SELECT id, email FROM users WHERE id = $1
+              SELECT id, email FROM users WHERE id = :id
             SQL,
-            user_to_update_id
+            user_to_update
           );
           expect(success, to_equal(true));
           expect(updated_results.count, to_equal(1));
@@ -118,13 +118,13 @@
         }
 
         {
-          unchanged_results, success := execute(
+          unchanged_results, success := execute_with_struct_args(
             connection,
             User,
             #string SQL
-              SELECT id, email FROM users WHERE id = $1
+              SELECT id, email FROM users WHERE id = :id
             SQL,
-            user_not_to_update_id
+            user_not_to_update
           );
           expect(success, to_equal(true));
           expect(unchanged_results.count, to_equal(1));

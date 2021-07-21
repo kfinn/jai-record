@@ -44,7 +44,7 @@
 
         InsertResult :: struct { id: int; }
 
-        test_user_insert_results := execute(
+        test_user_insert_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
@@ -171,7 +171,7 @@
 
         InsertResult :: struct { id: int; }
 
-        test_user_insert_results := execute(
+        test_user_insert_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
@@ -182,18 +182,18 @@
           SQL
         );
 
-        test_user_id := test_user_insert_results[0].id;
+        test_user := test_user_insert_results[0];
 
-        test_todo_insert_results := execute(
+        test_todo_insert_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'todo description')
+              (:id, 'todo description')
             RETURNING id
           SQL,
-          test_user_id
+          test_user
         );
 
         test_todo_id := test_todo_insert_results[0].id;

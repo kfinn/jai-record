@@ -52,15 +52,19 @@ execute :: (conn: *PGconn, $T: Type, command: string, args: ..Any) -> []T, succe
   return results, success;
 }
 
-execute_new :: (conn: *PGconn, $ResultType: Type, $command: string) -> []ResultType, success: bool {
+execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string) -> []ResultType, success: bool {
   EmptyArgs :: struct {};
   EMPTY_ARGS :: EmptyArgs.{};
 
-  results, success := execute_new(conn, ResultType, command, EMPTY_ARGS);
+  results, success := execute_with_struct_args(conn, ResultType, command, EMPTY_ARGS);
   return results, success;
 }
 
-execute_new :: (conn: *PGconn, $ResultType: Type, $command: string, args: $ArgsType) -> []ResultType, success: bool {
+execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string, args: $ArgsType) -> []ResultType, success: bool #modify {
+  if ArgsType.type != .STRUCT {
+    ArgsType = null;
+  }
+}{
   pool: Pool;
   set_allocators(*pool);
 

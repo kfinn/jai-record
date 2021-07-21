@@ -33,11 +33,11 @@
             email: string;
           }
           connection := jai_record_pg_connection();
-          select_results := execute(
+          select_results := execute_with_struct_args(
             connection,
             SelectResult,
-            "SELECT id, email FROM users WHERE id = $1",
-            new_user.id
+            "SELECT id, email FROM users WHERE id = :id",
+            new_user
           );
           expect(select_results.count, to_equal(1));
           select_result := select_results[0];
@@ -69,7 +69,7 @@
 
           InsertResult :: struct { id: int; }
           connection := jai_record_pg_connection();
-          insert_results := execute(
+          insert_results := execute_with_struct_args(
             connection,
             InsertResult,
             "INSERT INTO users (email) VALUES ('existing_user@email.com') RETURNING id"
@@ -115,7 +115,7 @@
         it("deletes the record", #code{
           connection := jai_record_pg_connection();
           InsertResult :: struct { id: int; }
-          insert_results := execute(
+          insert_results := execute_with_struct_args(
             connection,
             InsertResult,
             "INSERT INTO users (email) VALUES ('to_delete@test.edu') RETURNING id"

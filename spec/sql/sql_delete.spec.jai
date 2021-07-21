@@ -17,7 +17,7 @@
         id: int;
       }
 
-      execute_insert_result, execute_insert_success := execute(
+      execute_insert_result, execute_insert_success := execute_with_struct_args(
         connection,
         ExecuteInsertResult,
         #string SQL

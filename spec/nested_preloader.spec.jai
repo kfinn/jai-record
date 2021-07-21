@@ -46,7 +46,7 @@
 
         connection := jai_record_pg_connection();
         InsertResult :: struct { id: int; }
-        users_insert_results := execute(
+        users_insert_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
@@ -55,34 +55,34 @@
             RETURNING id
           SQL
         );
-        user_id := users_insert_results[0].id;
+        user := users_insert_results[0];
 
-        toods_insert_results := execute(
+        toods_insert_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'todo with taggings'),
-              ($1, 'todo with no taggings')
+              (:id, 'todo with taggings'),
+              (:id, 'todo with no taggings')
             RETURNING id
           SQL,
-          user_id
+          user
         );
         todo_with_taggings_id := toods_insert_results[0].id;
         todo_with_no_taggings_id := toods_insert_results[1].id;
 
-        tags_insert_results := execute(
+        tags_insert_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
             INSERT INTO tags (user_id, description)
             VALUES
-              ($1, 'first tag'),
-              ($1, 'second tag')
+              (:id, 'first tag'),
+              (:id, 'second tag')
             RETURNING id
           SQL,
-          user_id
+          user
         );
         first_tag_id := tags_insert_results[0].id;
         second_tag_id := tags_insert_results[1].id;
@@ -175,7 +175,7 @@
 
         connection := jai_record_pg_connection();
         InsertResult :: struct { id: int; }
-        insert_user_results := execute(
+        insert_user_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
@@ -185,19 +185,19 @@
             RETURNING id
           SQL
         );
-        user_id := insert_user_results[0].id;
+        user := insert_user_results[0];
 
-        insert_tags_results := execute(
+        insert_tags_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
             INSERT INTO tags (user_id, description)
             VALUES
-              ($1, 'first tag'),
-              ($1, 'second tag')
+              (:id, 'first tag'),
+              (:id, 'second tag')
             RETURNING id
           SQL,
-          user_id
+          user
         );
         first_tag_id := insert_tags_results[0].id;
         second_tag_id := insert_tags_results[1].id;
@@ -211,7 +211,7 @@
               ($1, 'second todo'),
               ($1, 'third todo')
           SQL,
-          user_id
+          user.id
         );
 
         is_test_tag: SqlWhere("id IN (?)", 1);
