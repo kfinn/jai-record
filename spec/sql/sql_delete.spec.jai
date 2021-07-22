@@ -38,17 +38,22 @@
       }
 
       {
-        count_result, count_success := execute(
+        count_args: struct { ids: []int; };
+        ids: [3]int;
+        ids[0] = execute_insert_result[0].id;
+        ids[1] = execute_insert_result[1].id;
+        ids[2] = execute_insert_result[2].id;
+        count_args.ids = ids;
+
+        count_result, count_success := execute_with_struct_args(
           connection,
           CountResult,
           #string SQL
             SELECT COUNT(*) AS users_count
               FROM users
-              WHERE id IN ($1, $2, $3)
+              WHERE id IN (:ids)
           SQL,
-          execute_insert_result[0].id,
-          execute_insert_result[1].id,
-          execute_insert_result[2].id
+          count_args
         );
 
         expect(count_success, to_equal(true));
@@ -67,17 +72,22 @@
       expect(delete_success, to_equal(true));
 
       {
-        count_result, count_success := execute(
+        count_args: struct { ids: []int; };
+        ids: [3]int;
+        ids[0] = execute_insert_result[0].id;
+        ids[1] = execute_insert_result[1].id;
+        ids[2] = execute_insert_result[2].id;
+        count_args.ids = ids;
+
+        count_result, count_success := execute_with_struct_args(
           connection,
           CountResult,
           #string SQL
             SELECT COUNT(*) AS users_count
               FROM users
-              WHERE id IN ($1, $2, $3)
+              WHERE id IN (:ids)
           SQL,
-          execute_insert_result[0].id,
-          execute_insert_result[1].id,
-          execute_insert_result[2].id
+          count_args
         );
 
         expect(count_success, to_equal(true));

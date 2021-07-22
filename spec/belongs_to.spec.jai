@@ -56,22 +56,25 @@
           SQL
         );
 
-        user_with_some_todos_id := test_user_insert_results[0].id;
-        user_with_one_todo_id := test_user_insert_results[1].id;
+        todo_insert_args: struct {
+          user_with_some_todos_id: int;
+          user_with_one_todo_id: int;
+        }
+        todo_insert_args.user_with_some_todos_id = test_user_insert_results[0].id;
+        todo_insert_args.user_with_one_todo_id = test_user_insert_results[1].id;
 
-        test_todo_insert_results := execute(
+        test_todo_insert_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'first todo for user with some todos'),
-              ($1, 'second todo for user with some todos'),
-              ($2, 'todo for user with one todo')
+              (:user_with_some_todos_id, 'first todo for user with some todos'),
+              (:user_with_some_todos_id, 'second todo for user with some todos'),
+              (:user_with_one_todo_id, 'todo for user with one todo')
             RETURNING id
           SQL,
-          user_with_some_todos_id,
-          user_with_one_todo_id
+          todo_insert_args
         );
 
         first_test_todo_for_user_with_some_todos_id := test_todo_insert_results[0].id;

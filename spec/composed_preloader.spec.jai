@@ -82,43 +82,59 @@
         user_to_select_with_no_data_id := insert_users_results[1].id;
         user_not_to_select_id := insert_users_results[2].id;
 
-        insert_todos_results := execute(
+        insert_todos_args: struct {
+          user_to_select_id: int;
+          user_not_to_select_id: int;
+        };
+        insert_todos_args.user_to_select_id = user_to_select_id;
+        insert_todos_args.user_not_to_select_id = user_not_to_select_id;
+
+        insert_todos_results := execute_with_struct_args(
           connection,
           InsertResult,
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'first selected todo'),
-              ($2, 'recommended todo')
+              (:user_to_select_id, 'first selected todo'),
+              (:user_not_to_select_id, 'recommended todo')
             RETURNING id
           SQL,
-          user_to_select_id,
-          user_not_to_select_id
+          insert_todos_args
         );
         todo_to_select_id := insert_todos_results[0].id;
         todo_to_recommend_id := insert_todos_results[1].id;
 
-        execute(
+        execute_with_struct_args(
           connection,
           #string SQL
             INSERT INTO tags (user_id, description)
             VALUES
-              ($1, 'selected tag'),
-              ($2, 'tag not to select')
+              (:user_to_select_id, 'selected tag'),
+              (:user_not_to_select_id, 'tag not to select')
           SQL,
-          user_to_select_id,
-          user_not_to_select_id
+          insert_todos_args
         );
-        execute(
+
+        insert_recommended_todos_args: struct {
+          user_to_select_id: int;
+          todo_to_recommend_id: int;
+          user_not_to_select_id: int;
+          todo_to_select_id: int;
+        }
+        insert_recommended_todos_args.user_to_select_id = user_to_select_id;
+        insert_recommended_todos_args.todo_to_recommend_id = todo_to_recommend_id;
+        insert_recommended_todos_args.user_not_to_select_id = user_not_to_select_id;
+        insert_recommended_todos_args.todo_to_select_id = todo_to_select_id;
+
+        execute_with_struct_args(
           connection,
           #string SQL
             INSERT INTO recommended_todos (user_id, todo_id)
             VALUES
-              ($1, $2),
-              ($3, $4)
+              (:user_to_select_id, :todo_to_recommend_id),
+              (:user_not_to_select_id, :todo_to_select_id)
           SQL,
-          user_to_select_id, todo_to_recommend_id,
-          user_not_to_select_id, todo_to_select_id
+          insert_recommended_todos_args
         );
 
         is_test_user: SqlWhere("email LIKE 'user_to_select_%'");
@@ -238,17 +254,24 @@
         tag_1_id := insert_tags_result[0].id;
         tag_2_id := insert_tags_result[1].id;
 
-        execute(
+        insert_taggings_args: struct {
+          todo_with_taggings_id: int;
+          tag_1_id: int;
+          tag_2_id: int;
+        }
+        insert_taggings_args.todo_with_taggings_id = todo_with_taggings_id;
+        insert_taggings_args.tag_1_id = tag_1_id;
+        insert_taggings_args.tag_2_id = tag_2_id;
+
+        execute_with_struct_args(
           connection,
           #string SQL
             INSERT INTO taggings (todo_id, tag_id)
             VALUES
-              ($1, $2),
-              ($1, $3)
+              (:todo_with_taggings_id, :tag_1_id),
+              (:todo_with_taggings_id, :tag_2_id)
           SQL,
-          todo_with_taggings_id,
-          tag_1_id,
-          tag_2_id
+          insert_taggings_args
         );
 
         is_test_todo: SqlWhere("id IN (:ids)", struct { ids: []int; });

@@ -62,18 +62,24 @@
         user_with_no_todos_id := insert_results[1].id;
         user_with_one_todo_id := insert_results[2].id;
 
-        execute(
+        insert_todos_args: struct {
+          user_with_some_todos_id: int;
+          user_with_one_todo_id: int;
+        }
+        insert_todos_args.user_with_some_todos_id = user_with_some_todos_id;
+        insert_todos_args.user_with_one_todo_id = user_with_one_todo_id;
+
+        execute_with_struct_args(
           connection,
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'first todo for user with some todos'),
-              ($1, 'second todo for user with some todos'),
-              ($1, 'third todo for user with some todos'),
-              ($2, 'todo for user with one todo')
+              (:user_with_some_todos_id, 'first todo for user with some todos'),
+              (:user_with_some_todos_id, 'second todo for user with some todos'),
+              (:user_with_some_todos_id, 'third todo for user with some todos'),
+              (:user_with_one_todo_id, 'todo for user with one todo')
           SQL,
-          user_with_some_todos_id,
-          user_with_one_todo_id
+          insert_todos_args
         );
 
         test_user_ids: [..]int;
@@ -181,14 +187,19 @@
 
         user_with_one_todo_id := insert_results[0].id;
 
-        execute(
+        insert_todos_args: struct {
+          user_with_one_todo_id: int;
+        }
+        insert_todos_args.user_with_one_todo_id = user_with_one_todo_id;
+
+        execute_with_struct_args(
           connection,
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'todo for user with one todo')
+              (:user_with_one_todo_id, 'todo for user with one todo')
           SQL,
-          user_with_one_todo_id
+          insert_todos_args
         );
 
         is_test_user: SqlWhere("id = :id", struct { id: int; });

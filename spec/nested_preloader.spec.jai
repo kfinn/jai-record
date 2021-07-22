@@ -87,17 +87,24 @@
         first_tag_id := tags_insert_results[0].id;
         second_tag_id := tags_insert_results[1].id;
 
-        execute(
+        insert_taggings_args: struct {
+          todo_with_taggings_id: int;
+          first_tag_id: int;
+          second_tag_id: int;
+        }
+        insert_taggings_args.todo_with_taggings_id = todo_with_taggings_id;
+        insert_taggings_args.first_tag_id = first_tag_id;
+        insert_taggings_args.second_tag_id = second_tag_id;
+
+        execute_with_struct_args(
           connection,
           #string SQL
             INSERT INTO taggings (todo_id, tag_id)
             VALUES
-              ($1, $2),
-              ($1, $3)
+              (:todo_with_taggings_id, :first_tag_id),
+              (:todo_with_taggings_id, :second_tag_id)
           SQL,
-          todo_with_taggings_id,
-          first_tag_id,
-          second_tag_id
+          insert_taggings_args
         );
 
         is_test_todo: SqlWhere("id IN (:ids)", struct { ids: []int; });
@@ -202,16 +209,16 @@
         first_tag_id := insert_tags_results[0].id;
         second_tag_id := insert_tags_results[1].id;
 
-        execute(
+        execute_with_struct_args(
           connection,
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'first todo'),
-              ($1, 'second todo'),
-              ($1, 'third todo')
+              (:id, 'first todo'),
+              (:id, 'second todo'),
+              (:id, 'third todo')
           SQL,
-          user.id
+          user
         );
 
         is_test_tag: SqlWhere("id IN (:ids)", struct { ids: []int; });
