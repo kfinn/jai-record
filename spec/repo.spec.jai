@@ -4,11 +4,11 @@
       "with an unpersisted record",
       before_all=#code {
         connection := jai_record_pg_connection();
-        execute(connection, "BEGIN");
+        execute_with_struct_args(connection, "BEGIN");
       },
       after_all=#code {
         connection := jai_record_pg_connection();
-        execute(connection, "ROLLBACK");
+        execute_with_struct_args(connection, "ROLLBACK");
       },
       body=#code{
         it("inserts the user into the database and sets the user ID", #code{
@@ -50,11 +50,11 @@
       "with a persisted record",
       before_all=#code {
         connection := jai_record_pg_connection();
-        execute(connection, "BEGIN");
+        execute_with_struct_args(connection, "BEGIN");
       },
       after_all=#code {
         connection := jai_record_pg_connection();
-        execute(connection, "ROLLBACK");
+        execute_with_struct_args(connection, "ROLLBACK");
       },
       body=#code{
         it("updates the user in the database", #code{
@@ -86,11 +86,13 @@
           expect(user.email, to_equal("updated@email.org"));
 
           SelectResult :: struct { id: int; email: string; }
-          select_results := execute(
+          args: struct { user_id: int; };
+          args.user_id = user_id;
+          select_results := execute_with_struct_args(
             connection,
             SelectResult,
-            "SELECT id, email FROM users WHERE id = $1",
-            user_id
+            "SELECT id, email FROM users WHERE id = :user_id",
+            args
           );
           expect(select_results.count, to_equal(1));
           select_result := select_results[0];
@@ -105,11 +107,11 @@
       "with a persisted record",
       before_all=#code {
         connection := jai_record_pg_connection();
-        execute(connection, "BEGIN");
+        execute_with_struct_args(connection, "BEGIN");
       },
       after_all=#code {
         connection := jai_record_pg_connection();
-        execute(connection, "ROLLBACK");
+        execute_with_struct_args(connection, "ROLLBACK");
       },
       body=#code{
         it("deletes the record", #code{

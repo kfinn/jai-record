@@ -52,12 +52,16 @@ execute :: (conn: *PGconn, $T: Type, command: string, args: ..Any) -> []T, succe
   return results, success;
 }
 
-execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string) -> []ResultType, success: bool {
-  EmptyArgs :: struct {};
-  EMPTY_ARGS :: EmptyArgs.{};
+EmptyArgs :: struct {};
+EMPTY_ARGS :: EmptyArgs.{};
 
+execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string) -> []ResultType, success: bool {
   results, success := execute_with_struct_args(conn, ResultType, command, EMPTY_ARGS);
   return results, success;
+}
+
+execute_with_struct_args :: (conn: *PGconn, $command: string) -> bool {
+  return execute_with_struct_args(conn, command, EMPTY_ARGS);
 }
 
 execute_with_struct_args :: (conn: *PGconn, $command: string, args: $ArgsType) -> bool {

@@ -24,11 +24,11 @@
     "sql_update_execute",
     before_all=#code {
       connection := jai_record_pg_connection();
-      execute(connection, "BEGIN");
+      execute_with_struct_args(connection, "BEGIN");
     },
     after_all=#code {
       connection := jai_record_pg_connection();
-      execute(connection, "ROLLBACK");
+      execute_with_struct_args(connection, "ROLLBACK");
     },
     body=#code {
       it("updates records in the database", #code {

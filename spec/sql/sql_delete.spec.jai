@@ -2,11 +2,11 @@
   "sql_delete.jai", 
   before_all=#code {
     connection := jai_record_pg_connection();
-    execute(connection, "BEGIN");
+    execute_with_struct_args(connection, "BEGIN");
   },
   after_all=#code {
     connection := jai_record_pg_connection();
-    execute(connection, "ROLLBACK");
+    execute_with_struct_args(connection, "ROLLBACK");
   },
   body=#code {
     it("delete, with a where expression, deletes matching records", #code {
