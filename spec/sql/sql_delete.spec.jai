@@ -38,17 +38,22 @@
       }
 
       {
+        count_args: struct { ids: []int; };
+        ids: [3]int;
+        ids[0] = execute_insert_result[0].id;
+        ids[1] = execute_insert_result[1].id;
+        ids[2] = execute_insert_result[2].id;
+        count_args.ids = ids;
+
         count_result, count_success := execute(
           connection,
           CountResult,
           #string SQL
             SELECT COUNT(*) AS users_count
               FROM users
-              WHERE id IN ($1, $2, $3)
+              WHERE id IN (:ids)
           SQL,
-          execute_insert_result[0].id,
-          execute_insert_result[1].id,
-          execute_insert_result[2].id
+          count_args
         );
 
         expect(count_success, to_equal(true));
@@ -56,28 +61,33 @@
         expect(count_result[0].users_count, to_equal(3));
       }
 
-      delete_where: SqlWhere("email LIKE ?", 1);
-      delete_where.args[0] = "test_to_delete_with_like_expression%@gmail.com";
+      delete_where: SqlWhere("email LIKE :email_pattern", struct { email_pattern: string; });
+      delete_where.email_pattern = "test_to_delete_with_like_expression%@gmail.com";
 
       delete_success := sql_delete_execute(
         "users",
-        *delete_where      
+        delete_where      
       );
 
       expect(delete_success, to_equal(true));
 
       {
+        count_args: struct { ids: []int; };
+        ids: [3]int;
+        ids[0] = execute_insert_result[0].id;
+        ids[1] = execute_insert_result[1].id;
+        ids[2] = execute_insert_result[2].id;
+        count_args.ids = ids;
+
         count_result, count_success := execute(
           connection,
           CountResult,
           #string SQL
             SELECT COUNT(*) AS users_count
               FROM users
-              WHERE id IN ($1, $2, $3)
+              WHERE id IN (:ids)
           SQL,
-          execute_insert_result[0].id,
-          execute_insert_result[1].id,
-          execute_insert_result[2].id
+          count_args
         );
 
         expect(count_success, to_equal(true));

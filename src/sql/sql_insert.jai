@@ -1,8 +1,7 @@
 SqlInsert :: struct(
   $SQL_EXPRESSION: string,
   $IdType: Type,
-  $InsertableFields: Type,
-  $to_sql_insert_args: (insertable_fields: *InsertableFields) -> []Any
+  $InsertableFields: Type
 ) {
   using insertable_fields: InsertableFields;
 }
@@ -19,7 +18,7 @@ sql_insert :: ($InsertableFields: Type, $IdType: Type) -> Type {
     defer array_reset(*insertable_field_placeholders);
     for insertable_fields_type_info.members {
       array_add(*insertable_field_names, it.name);
-      array_add(*insertable_field_placeholders, sprint("$%", it_index + 1));
+      array_add(*insertable_field_placeholders, sprint(":%", it.name));
     }
 
     return sprint(
@@ -29,38 +28,18 @@ sql_insert :: ($InsertableFields: Type, $IdType: Type) -> Type {
     );
   }();
 
-  to_sql_insert_args :: (insertable_fields: *$T) -> [..]Any {
-    #insert #run () -> string {
-      builder: String_Builder;
-      defer free_buffers(*builder);
-
-      insertable_fields_type_info := type_info(InsertableFields);
-      print_to_builder(*builder, "result: [..]Any;\n", insertable_fields_type_info.members.count);
-      for insertable_fields_type_info.members {
-        print_to_builder(*builder, "array_add(*result, insertable_fields.%);\n", it.name);
-      }
-
-      print_to_builder(*builder, "return result;\n");
-
-      return builder_to_string(*builder);
-    }();
-  };
-
   return SqlInsert(
     SQL_EXPRESSION=SQL_EXPRESSION,
     IdType=IdType,
-    InsertableFields=InsertableFields,
-    to_sql_insert_args=to_sql_insert_args
+    InsertableFields=InsertableFields
   );
 }
 
-sql_insert_execute :: (into: string, insert: *$Insert) -> id: Insert.IdType, success: bool {
+sql_insert_execute :: ($into: string, insert: $Insert) -> id: Insert.IdType, success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return 0, false;
 
-  expression_string := sprint("INSERT INTO % % RETURNING id;", into, Insert.SQL_EXPRESSION);
-
-  args := Insert.to_sql_insert_args(insert);
+  expression_string :: #run sprint("INSERT INTO % % RETURNING id;", into, Insert.SQL_EXPRESSION);
 
   Result :: struct {
     id: Insert.IdType;
@@ -70,7 +49,7 @@ sql_insert_execute :: (into: string, insert: *$Insert) -> id: Insert.IdType, suc
     connection,
     Result,
     expression_string,
-    ..args
+    insert
   );
 
   if !execute_success return 0, false;

@@ -62,29 +62,35 @@
         user_with_no_todos_id := insert_results[1].id;
         user_with_one_todo_id := insert_results[2].id;
 
+        insert_todos_args: struct {
+          user_with_some_todos_id: int;
+          user_with_one_todo_id: int;
+        }
+        insert_todos_args.user_with_some_todos_id = user_with_some_todos_id;
+        insert_todos_args.user_with_one_todo_id = user_with_one_todo_id;
+
         execute(
           connection,
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'first todo for user with some todos'),
-              ($1, 'second todo for user with some todos'),
-              ($1, 'third todo for user with some todos'),
-              ($2, 'todo for user with one todo')
+              (:user_with_some_todos_id, 'first todo for user with some todos'),
+              (:user_with_some_todos_id, 'second todo for user with some todos'),
+              (:user_with_some_todos_id, 'third todo for user with some todos'),
+              (:user_with_one_todo_id, 'todo for user with one todo')
           SQL,
-          user_with_some_todos_id,
-          user_with_one_todo_id
+          insert_todos_args
         );
 
-        test_user_ids: [..]Any;
+        test_user_ids: [..]int;
         for * insert_results array_add(*test_user_ids, it.id);
 
-        is_test_user: SqlWhere("id IN (?)", 1);
-        is_test_user.args[0] = test_user_ids;
+        is_test_user: SqlWhere("id IN (:ids)", struct { ids: []int; });
+        is_test_user.ids = test_user_ids;
 
         test_users_with_test_todos := preload(
           TestUserHasManyTestTodos,
-          TestUsersRepo.all(*is_test_user)
+          TestUsersRepo.where(is_test_user)
         );
 
         expect(test_users_with_test_todos.count, to_equal(3));
@@ -181,22 +187,27 @@
 
         user_with_one_todo_id := insert_results[0].id;
 
+        insert_todos_args: struct {
+          user_with_one_todo_id: int;
+        }
+        insert_todos_args.user_with_one_todo_id = user_with_one_todo_id;
+
         execute(
           connection,
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'todo for user with one todo')
+              (:user_with_one_todo_id, 'todo for user with one todo')
           SQL,
-          user_with_one_todo_id
+          insert_todos_args
         );
 
-        is_test_user: SqlWhere("id = ?", 1);
-        is_test_user.args[0] = user_with_one_todo_id;
+        is_test_user: SqlWhere("id = :id", struct { id: int; });
+        is_test_user.id = user_with_one_todo_id;
 
         test_users_with_test_todos := preload(
           TestUserHasManyTestTodos,
-          TestUsersRepo.all(*is_test_user)
+          TestUsersRepo.where(is_test_user)
         );
 
         expect(test_users_with_test_todos.count, to_equal(1));

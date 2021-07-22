@@ -56,8 +56,12 @@
           SQL
         );
 
-        user_with_some_todos_id := test_user_insert_results[0].id;
-        user_with_one_todo_id := test_user_insert_results[1].id;
+        todo_insert_args: struct {
+          user_with_some_todos_id: int;
+          user_with_one_todo_id: int;
+        }
+        todo_insert_args.user_with_some_todos_id = test_user_insert_results[0].id;
+        todo_insert_args.user_with_one_todo_id = test_user_insert_results[1].id;
 
         test_todo_insert_results := execute(
           connection,
@@ -65,28 +69,27 @@
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'first todo for user with some todos'),
-              ($1, 'second todo for user with some todos'),
-              ($2, 'todo for user with one todo')
+              (:user_with_some_todos_id, 'first todo for user with some todos'),
+              (:user_with_some_todos_id, 'second todo for user with some todos'),
+              (:user_with_one_todo_id, 'todo for user with one todo')
             RETURNING id
           SQL,
-          user_with_some_todos_id,
-          user_with_one_todo_id
+          todo_insert_args
         );
 
         first_test_todo_for_user_with_some_todos_id := test_todo_insert_results[0].id;
         second_test_todo_for_user_with_some_todos_id := test_todo_insert_results[1].id;
         test_todo_for_user_with_one_todo_id := test_todo_insert_results[2].id;
 
-        test_todo_ids: [..]Any;
+        test_todo_ids: [..]int;
         for * test_todo_insert_results array_add(*test_todo_ids, it.id);
 
-        is_test_todo: SqlWhere("id IN (?)", 1);
-        is_test_todo.args[0] = test_todo_ids;
+        is_test_todo: SqlWhere("id IN (:ids)", struct { ids: []int; });
+        is_test_todo.ids = test_todo_ids;
 
         test_todos_with_test_users := preload(
           TestTodoBelongsToTestUser,
-          TestTodosRepo.all(*is_test_todo)
+          TestTodosRepo.where(is_test_todo)
         );
 
         expect(test_todos_with_test_users.count, to_equal(3));
@@ -182,7 +185,7 @@
           SQL
         );
 
-        test_user_id := test_user_insert_results[0].id;
+        test_user := test_user_insert_results[0];
 
         test_todo_insert_results := execute(
           connection,
@@ -190,20 +193,20 @@
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'todo description')
+              (:id, 'todo description')
             RETURNING id
           SQL,
-          test_user_id
+          test_user
         );
 
         test_todo_id := test_todo_insert_results[0].id;
 
-        is_test_todo: SqlWhere("id = ?", 1);
-        is_test_todo.args[0] = test_todo_id;
+        is_test_todo: SqlWhere("id = :id", struct { id: int; });
+        is_test_todo.id = test_todo_id;
 
         test_todos_with_test_users := preload(
           TestTodoBelongsToTestUser,
-          TestTodosRepo.all(*is_test_todo)
+          TestTodosRepo.where(is_test_todo)
         );
 
         test_todo := test_todos_with_test_users[0];

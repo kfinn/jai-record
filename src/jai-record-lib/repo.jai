@@ -13,11 +13,6 @@ jai_record_pg_connection :: () -> *PGconn, success: bool {
   }
 }
 
-WithId :: SqlWhere(
-  SQL_EXPRESSION="id = ?",
-  ARGS_COUNT=1
-);
-
 EmptyMutableRecord :: struct {};
 
 repo :: ($table_name: string, $Record: Type, $MutableRecord: Type = EmptyMutableRecord) -> Type {
@@ -35,6 +30,7 @@ repo :: ($table_name: string, $Record: Type, $MutableRecord: Type = EmptyMutable
     MutableRecord :: MutableRecord;
     table_name :: table_name;
     find :: #bake_arguments repo_find(repo=Repo);
+    where :: #bake_arguments repo_where(repo=Repo);
     all :: #bake_arguments repo_all(repo=Repo);
     save :: #bake_arguments repo_save(repo=Repo);
     delete :: #bake_arguments repo_delete(repo=Repo);
@@ -44,17 +40,22 @@ repo :: ($table_name: string, $Record: Type, $MutableRecord: Type = EmptyMutable
 }
 
 repo_find :: ($repo: Type, id: $T) -> *repo.Record, success: bool {
-  with_id: WithId;
-  with_id.args[0] = id;
+  with_id: SqlWhere("id = :id", struct { id: T; });
+  with_id.id = id;
 
-  records, all_success := repo.all(*with_id);
+  records, all_success := repo.where(with_id);
 
   if !all_success return null, false;
   if records.count != 1 return null, false;
   return *records[0], true;
 }
 
-repo_all :: ($repo: Type, where: *$Where = null) -> []repo.Record, success: bool {
+repo_all :: ($repo: Type) -> []repo.Record, success: bool {
+  records, success := repo_where(repo, EmptySqlWhere.{});
+  return records, success;
+}
+
+repo_where :: ($repo: Type, where: $Where) -> []repo.Record, success: bool {
   records, success := sql_select_execute(
     repo.Select,
     repo.table_name,
@@ -71,15 +72,15 @@ repo_save :: ($repo: Type, record: *repo.Record) -> success: bool {
     copy_mutable_fields(record, *insert.insertable_fields);
     id, success := sql_insert_execute(
       repo.table_name,
-      *insert
+      insert
     );
     if !success return false;
     record.id = id;
     return true;
   } else {
     update: repo.Update;
-    where: SqlWhere("id = ?", 1);
-    where.args[0] = record.id;
+    where: SqlWhere("id = :id", struct { id: repo.IdType; });
+    where.id = record.id;
 
     copy_mutable_fields(record, *update.updatable_fields);
     success := sql_update_execute(repo.table_name, *update, *where);
@@ -101,8 +102,8 @@ copy_mutable_fields :: (record: *$Record, mutable_fields: *$MutableFields) {
 }
 
 repo_delete :: ($repo: Type, record: *repo.Record) -> success: bool {
-  where: SqlWhere("id = ?", 1);
-  where.args[0] = record.id;
+  where: SqlWhere("id = :id", struct { id: repo.IdType; });
+  where.id = record.id;
 
-  return sql_delete_execute(repo.table_name, *where);
+  return sql_delete_execute(repo.table_name, where);
 };

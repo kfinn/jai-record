@@ -36,6 +36,7 @@ look_up_some_number :: (query: string, args: ..Any) -> int {
   }
   print("query: %, %\n", query, values);
 
+  // note: this no longer works.
   results, success := execute(connection, Result, query, ..args);
 
   if !success {

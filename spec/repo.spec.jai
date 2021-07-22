@@ -36,8 +36,8 @@
           select_results := execute(
             connection,
             SelectResult,
-            "SELECT id, email FROM users WHERE id = $1",
-            new_user.id
+            "SELECT id, email FROM users WHERE id = :id",
+            new_user
           );
           expect(select_results.count, to_equal(1));
           select_result := select_results[0];
@@ -86,11 +86,13 @@
           expect(user.email, to_equal("updated@email.org"));
 
           SelectResult :: struct { id: int; email: string; }
+          args: struct { user_id: int; };
+          args.user_id = user_id;
           select_results := execute(
             connection,
             SelectResult,
-            "SELECT id, email FROM users WHERE id = $1",
-            user_id
+            "SELECT id, email FROM users WHERE id = :user_id",
+            args
           );
           expect(select_results.count, to_equal(1));
           select_result := select_results[0];

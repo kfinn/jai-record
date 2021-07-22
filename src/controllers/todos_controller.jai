@@ -31,7 +31,7 @@ TodosController :: struct {
     print_to_builder(*response_builder, "todo:\n");
     print_to_builder(*response_builder, "%\n", todo.description);
     if todo.completed_at {
-      print_to_builder(*response_builder, "completed: %\n", todo.completed_at);
+      print_to_builder(*response_builder, "completed: %\n", <<todo.completed_at);
     } else {
       print_to_builder(*response_builder, "not completed\n");
     }
@@ -69,9 +69,9 @@ TodosController :: struct {
     }
 
     if params.todo.completed_at {
-      todo.completed_at = params.todo.completed_at;
+      todo.completed_at = *params.todo.completed_at;
     } else {
-      todo.completed_at = "NULL";
+      todo.completed_at = null;
     }
 
     if TodosRepo.save(todo) {

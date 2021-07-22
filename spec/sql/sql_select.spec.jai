@@ -48,14 +48,14 @@
         uppercase_email: string; @SqlExpression(upper(users.email))
       });
 
-      WithEmailPrefix :: SqlWhere("email LIKE ?", 1);
-      with_sql_select_spec_email_prefix: WithEmailPrefix;
-      with_sql_select_spec_email_prefix.args[0] = "sql_select.spec_%@%_email.com";
+      WithEmailPattern :: SqlWhere("email LIKE :email_pattern", struct { email_pattern: string; });
+      with_sql_select_spec_email_prefix: WithEmailPattern;
+      with_sql_select_spec_email_prefix.email_pattern = "sql_select.spec_%@%_email.com";
 
       selected_users, success := sql_select_execute(
         SelectUserWithUppercaseEmail,
         "users",
-        *with_sql_select_spec_email_prefix
+        with_sql_select_spec_email_prefix
       );
 
       expect(success, to_equal(true));

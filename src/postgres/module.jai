@@ -29,18 +29,28 @@ disconnect :: (conn: *PGconn) {
 	}
 };
 
-execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
+EmptyArgs :: struct {};
+EMPTY_ARGS :: EmptyArgs.{};
+
+execute :: (conn: *PGconn, $ResultType: Type, $command: string) -> []ResultType, success: bool {
+  results, success := execute(conn, ResultType, command, EMPTY_ARGS);
+  return results, success;
+}
+
+execute :: (conn: *PGconn, $command: string) -> bool {
+  return execute(conn, command, EMPTY_ARGS);
+}
+
+execute :: (conn: *PGconn, $command: string, args: $ArgsType) -> bool {
   query_result := send_query(conn, command, args);
-	defer PQclear(query_result);
 
   has_results, success := check_query_result(query_result);
   if !success return false;
   return true;
 }
 
-execute :: (conn: *PGconn, $T: Type, command: string, args: .. Any) -> []T, success: bool {
-	query_result := send_query(conn, command, args);
-	defer PQclear(query_result);
+execute :: (conn: *PGconn, $ResultType: Type, $command: string, args: $ArgsType) -> []ResultType, success: bool {
+  query_result := send_query(conn, command, args);
 
   {
     has_results, success := check_query_result(query_result);
@@ -48,49 +58,116 @@ execute :: (conn: *PGconn, $T: Type, command: string, args: .. Any) -> []T, succ
     if !has_results return .[], false;
   }
 
-  results, success := get_results(query_result, T);
+  results, success := get_results(query_result, ResultType);
   return results, success;
 }
 
 #scope_file
 
-send_query :: (conn: *PGconn, command: string, args: []Any) -> *PGresult {
-	pool: Pool;
-	set_allocators(*pool);
+send_query :: (conn: *PGconn, $command: string, args: $ArgsType) -> *PGresult #modify {
+  if ArgsType.type != .STRUCT {
+    ArgsType = null;
+  }
+} {
+  pool: Pool;
+  set_allocators(*pool);
 
-	new_context := context;
-	new_context.allocator = pool_allocator;
-	new_context.allocator_data = *pool;
+  {
+    push_allocator(pool_allocator, *pool);
 
-	push_context new_context {
-		param_values := NewArray(args.count, *u8, initialized = false);
+    query_builder: String_Builder;
+    defer free_buffers(*query_builder);
 
-		for arg, arg_index: args {
-      if (
-        arg.type == type_info(string) &&
-        (<<cast(*string)arg.value_pointer) == "NULL"
-      ) {
-        param_values[arg_index] = null;
-      } else {
-        param_values[arg_index] = to_c_string(sprint("%", arg));
+    next_placeholder_index := 1;
+    placeholder_values: [..]*u8;
+
+    #insert #run () -> string {
+      assert(type_info(ArgsType).type == .STRUCT);
+
+      string_builder: String_Builder;
+      defer free_buffers(*string_builder);
+
+      for component: parse_sql(command) {
+        if component.kind == {
+          case .SQL;
+            print_to_builder(
+              *string_builder,
+              "print_to_builder(*query_builder, \"%%\", slice(command, %, %));\n",
+              component.start_index,
+              component.count
+            );
+          case .PLACEHOLDER;
+            placeholder_path := slice(command, component.start_index, component.count);
+            placeholder_type_info: *Type_Info = type_info(ArgsType);
+            for placeholder_path_component: split(placeholder_path, ".") {
+              if placeholder_type_info.type == .POINTER {
+                placeholder_type_info = (cast(*Type_Info_Pointer)placeholder_type_info).pointer_to;
+              }
+              assert(
+                placeholder_type_info.type == .STRUCT,
+                "attempted to find member \"%\" in type \"%\" which is not a struct",
+                placeholder_path_component,
+                <<placeholder_type_info
+              );
+              type_info_struct := cast(*Type_Info_Struct)placeholder_type_info;
+              member := find_member(placeholder_path_component, type_info_struct);
+              assert(
+                member != null,
+                "unable to find member \"%\" in type \"%\"",
+                placeholder_path_component,
+                <<cast(*Type_Info_Struct)placeholder_type_info
+              );
+              placeholder_type_info = member.type;
+            }
+
+            is_array := placeholder_type_info.type == .ARRAY;
+            if is_array {
+              print_to_builder(*string_builder, "for arg, arg_index: args.% {\n", placeholder_path);
+              placeholder_array_type_info := cast(*Type_Info_Array)placeholder_type_info;
+              placeholder_type_info = placeholder_array_type_info.element_type;
+            } else {
+              print_to_builder(*string_builder, "{\n");
+              print_to_builder(*string_builder, "  arg := args.%;\n", placeholder_path);
+            }
+
+            if (placeholder_type_info.type == .POINTER) {
+              print_to_builder(*string_builder, "  if arg != null {\n");
+              print_to_builder(*string_builder, "    arg_value := to_c_string(sprint(\"%%\", <<arg));\n");
+              print_to_builder(*string_builder, "    array_add(*placeholder_values, arg_value);\n");
+              print_to_builder(*string_builder, "  } else {\n");
+              print_to_builder(*string_builder, "    array_add(*placeholder_values, null);\n");
+              print_to_builder(*string_builder, "  }\n");
+            } else {
+              print_to_builder(*string_builder, "  arg_value := to_c_string(sprint(\"%%\", arg));\n");
+              print_to_builder(*string_builder, "  array_add(*placeholder_values, arg_value);\n");
+            }
+            print_to_builder(*string_builder, "  print_to_builder(*query_builder, \"$%%\", next_placeholder_index);\n");
+
+            if is_array {
+              print_to_builder(*string_builder, "  if arg_index < args.%.count - 1 print_to_builder(*query_builder, \", \");\n", placeholder_path);
+            }
+            print_to_builder(*string_builder, "  next_placeholder_index += 1;\n");
+
+            print_to_builder(*string_builder, "}\n");
+        }
       }
-		}
 
-		c_command := to_c_string(command);
+      return builder_to_string(*string_builder);
+    }();
+
+    c_command := to_c_string(builder_to_string(*query_builder));
 
     return PQexecParams(
       conn,
       c_command,
-      xx args.count,
+      xx placeholder_values.count,
       null,
-      param_values.data,
+      placeholder_values.data,
       null,
       null,
       0
     );
-	}
-
-  return null;
+  }
 }
 
 check_query_result :: (query_result: *PGresult) -> has_results: bool, success: bool {
@@ -135,7 +212,8 @@ get_results :: (query_result: *PGresult, $T: Type) -> []T, success: bool {
         print_to_builder(*string_builder, "  case \"%\";\n", member.name);
         print_to_builder(*string_builder, "    for row_index : 0..results_count - 1 {\n");
         print_to_builder(*string_builder, "      string_value := get_string_value(query_result, row_index, column_index);\n");
-        print_to_builder(*string_builder, "      %(column_type, string_value, *results[row_index].%);\n", setter_name_for_member_type(member.type), member.name);
+        print_to_builder(*string_builder, "      is_null := PQgetisnull(query_result, row_index, column_index);\n");
+        print_to_builder(*string_builder, "      %(column_type, string_value, xx is_null, *results[row_index].%);\n", setter_name_for_member_type(member.type), member.name);
         print_to_builder(*string_builder, "    }\n");
       }
 
@@ -165,27 +243,73 @@ setter_name_for_member_type :: (member_type_info: *Type_Info) -> string {
       return "set_float_result_value";
     case .STRING;
       return "set_string_result_value";
+    case .POINTER;
+      pointer_to := (cast(*Type_Info_Pointer)member_type_info).pointer_to;
+      if pointer_to.type == {
+        case .INTEGER;
+          return "set_integer_pointer_result_value";
+        case .FLOAT;
+          return "set_float_pointer_result_value";
+        case .STRING;
+          return "set_string_pointer_result_value";
+      }
     case;
       return "set_unknown_result_value";
   }
 }
 
-set_string_result_value :: (pq_type: Pq_Types, value: string, destination: *string) {
+set_string_result_value :: (pq_type: Pq_Types, value: string, is_null: bool, destination: *string) {
   using Pq_Types;
   assert(pq_type == CHAR || pq_type == BPCHAR || pq_type == VARCHAR || pq_type == TEXT || pq_type == TIMESTAMP, "Expected string type, got: %::%", value, pq_type);
+  assert(!is_null, "expected non-null value, got null");
   <<destination = value;
 }
 
-set_integer_result_value :: (pq_type: Pq_Types, value: string, destination: *$T) {
+set_integer_result_value :: (pq_type: Pq_Types, value: string, is_null: bool, destination: *$T) {
   using Pq_Types;
   assert(pq_type == INT8 || pq_type == INT2 || pq_type == INT4, "Expected int type, got: %::%", value, pq_type);
+  assert(!is_null, "expected non-null value, got null");
   <<destination = parse_int(*value, T);
 }
 
-set_float_result_value :: (pq_type: Pq_Types, value: string, destination: *$T) {
+set_float_result_value :: (pq_type: Pq_Types, value: string, is_null: bool, destination: *$T) {
   using Pq_Types;
   assert(pq_type == FLOAT4 || pq_type == FLOAT8, "Expected float type, got: %::%", value, pq_type);
+  assert(!is_null, "expected non-null value, got null");
   <<destination = parse_float(*value, T);
+}
+
+set_string_pointer_result_value :: (pq_type: Pq_Types, value: string, is_null: bool, destination: **string) {
+  using Pq_Types;
+  assert(pq_type == CHAR || pq_type == BPCHAR || pq_type == VARCHAR || pq_type == TEXT || pq_type == TIMESTAMP, "Expected string type, got: %::%", value, pq_type);
+  if is_null {
+    <<destination = null;
+  } else {
+    <<destination = New(string);
+    << <<destination = value;
+  }
+}
+
+set_integer_pointer_result_value :: (pq_type: Pq_Types, value: string, is_null: bool, destination: **$T) {
+  using Pq_Types;
+  assert(pq_type == INT8 || pq_type == INT2 || pq_type == INT4, "Expected int type, got: %::%", value, pq_type);
+  if (is_null) {
+    <<destination = null;
+  } else {
+    <<destination = New(T);
+    << <<destination = parse_int(*value, T);
+  }
+}
+
+set_float_pointer_result_value :: (pq_type: Pq_Types, value: string, is_null: bool, destination: **$T) {
+  using Pq_Types;
+  assert(pq_type == FLOAT4 || pq_type == FLOAT8, "Expected float type, got: %::%", value, pq_type);
+  if (is_null) {
+    <<destination = null;
+  } else {
+    <<destination = New(T);
+    << <<destination = parse_float(*value, T);
+  }
 }
 
 set_unknown_result_value :: (pq_type: Pq_Types, value: string, destination: *$T) {

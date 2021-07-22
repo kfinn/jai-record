@@ -55,7 +55,7 @@
             RETURNING id
           SQL
         );
-        user_id := users_insert_results[0].id;
+        user := users_insert_results[0];
 
         toods_insert_results := execute(
           connection,
@@ -63,11 +63,11 @@
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'todo with taggings'),
-              ($1, 'todo with no taggings')
+              (:id, 'todo with taggings'),
+              (:id, 'todo with no taggings')
             RETURNING id
           SQL,
-          user_id
+          user
         );
         todo_with_taggings_id := toods_insert_results[0].id;
         todo_with_no_taggings_id := toods_insert_results[1].id;
@@ -78,40 +78,47 @@
           #string SQL
             INSERT INTO tags (user_id, description)
             VALUES
-              ($1, 'first tag'),
-              ($1, 'second tag')
+              (:id, 'first tag'),
+              (:id, 'second tag')
             RETURNING id
           SQL,
-          user_id
+          user
         );
         first_tag_id := tags_insert_results[0].id;
         second_tag_id := tags_insert_results[1].id;
+
+        insert_taggings_args: struct {
+          todo_with_taggings_id: int;
+          first_tag_id: int;
+          second_tag_id: int;
+        }
+        insert_taggings_args.todo_with_taggings_id = todo_with_taggings_id;
+        insert_taggings_args.first_tag_id = first_tag_id;
+        insert_taggings_args.second_tag_id = second_tag_id;
 
         execute(
           connection,
           #string SQL
             INSERT INTO taggings (todo_id, tag_id)
             VALUES
-              ($1, $2),
-              ($1, $3)
+              (:todo_with_taggings_id, :first_tag_id),
+              (:todo_with_taggings_id, :second_tag_id)
           SQL,
-          todo_with_taggings_id,
-          first_tag_id,
-          second_tag_id
+          insert_taggings_args
         );
 
-        is_test_todo: SqlWhere("id IN (?)", 1);
-        test_ids: [..]Any;
+        is_test_todo: SqlWhere("id IN (:ids)", struct { ids: []int; });
+        test_ids: [..]int;
         array_add(*test_ids, todo_with_taggings_id);
         array_add(*test_ids, todo_with_no_taggings_id);
-        is_test_todo.args[0] = test_ids;
+        is_test_todo.ids = test_ids;
 
         todos_with_taggings_and_tags := preload(
           #run nested_preloader(
             TodoHasManyTaggings,
             TaggingBelongsToTag,
           ),
-          TodosRepo.all(*is_test_todo)
+          TodosRepo.where(is_test_todo)
         );
 
         expect(todos_with_taggings_and_tags.count, to_equal(2));
@@ -185,7 +192,7 @@
             RETURNING id
           SQL
         );
-        user_id := insert_user_results[0].id;
+        user := insert_user_results[0];
 
         insert_tags_results := execute(
           connection,
@@ -193,11 +200,11 @@
           #string SQL
             INSERT INTO tags (user_id, description)
             VALUES
-              ($1, 'first tag'),
-              ($1, 'second tag')
+              (:id, 'first tag'),
+              (:id, 'second tag')
             RETURNING id
           SQL,
-          user_id
+          user
         );
         first_tag_id := insert_tags_results[0].id;
         second_tag_id := insert_tags_results[1].id;
@@ -207,25 +214,25 @@
           #string SQL
             INSERT INTO todos (user_id, description)
             VALUES
-              ($1, 'first todo'),
-              ($1, 'second todo'),
-              ($1, 'third todo')
+              (:id, 'first todo'),
+              (:id, 'second todo'),
+              (:id, 'third todo')
           SQL,
-          user_id
+          user
         );
 
-        is_test_tag: SqlWhere("id IN (?)", 1);
-        test_tag_ids: [..]Any;
+        is_test_tag: SqlWhere("id IN (:ids)", struct { ids: []int; });
+        test_tag_ids: [..]int;
         array_add(*test_tag_ids, first_tag_id);
         array_add(*test_tag_ids, second_tag_id);
-        is_test_tag.args[0] = test_tag_ids;
+        is_test_tag.ids = test_tag_ids;
 
         tags_with_users_and_todos := preload(
           #run nested_preloader(
             TagBelongsToUser,
             UserHasManyTodods
           ),
-          TagsRepo.all(*is_test_tag)
+          TagsRepo.where(is_test_tag)
         );
 
         expect(tags_with_users_and_todos.count, to_equal(2));

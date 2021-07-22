@@ -13,35 +13,9 @@
         expect(
           TestUpdate.SQL_EXPRESSION,
           to_equal(
-            "email=?, pets_count=?, favorite_pet_id=?, born_at=?, percent_complete=?"
+            "email=:email, pets_count=:pets_count, favorite_pet_id=:favorite_pet_id, born_at=:born_at, percent_complete=:percent_complete"
           )
         );
-      });
-    });
-
-    describe("to_sql_update_args", #code{
-      it("includes all values from the update", #code {
-        TestUpdate :: #run sql_update(struct {
-          email: string;
-          pets_count: int;
-          favorite_pet_id: int;
-          born_at: int;
-          percent_complete: float;
-        });
-
-        test_update: TestUpdate;
-        test_update.email = "some_great@email.edu";
-        test_update.pets_count = 3;
-        test_update.favorite_pet_id = 12;
-        test_update.born_at = 12345;
-        test_update.percent_complete = 0.25;
-
-        sql_update_args := TestUpdate.to_sql_update_args(*test_update);
-        expect(<<(cast(*string) sql_update_args[0].value_pointer), to_equal("some_great@email.edu"));
-        expect(<<(cast(*int) sql_update_args[1].value_pointer), to_equal(3));
-        expect(<<(cast(*int) sql_update_args[2].value_pointer), to_equal(12));
-        expect(<<(cast(*int) sql_update_args[3].value_pointer), to_equal(12345));
-        expect(<<(cast(*float) sql_update_args[4].value_pointer), to_equal(0.25));
       });
     });
   });
@@ -77,8 +51,8 @@
         expect(execute_insert_success, to_equal(true));
         expect(execute_insert_result.count, to_equal(2));
 
-        user_to_update_id := execute_insert_result[0].id;
-        user_not_to_update_id := execute_insert_result[1].id;
+        user_to_update := execute_insert_result[0];
+        user_not_to_update := execute_insert_result[1];
 
         UserMutableFields :: struct {
           email: string;
@@ -94,8 +68,8 @@
         updated_user: UserUpdate;
         updated_user.email = "some_new@email.org";
 
-        with_id: WithId;
-        with_id.args[0] = user_to_update_id;
+        with_id: SqlWhere("id = :id", struct { id: int; });
+        with_id.id = user_to_update.id;
 
         sql_update_execute(
           "users",
@@ -108,9 +82,9 @@
             connection,
             User,
             #string SQL
-              SELECT id, email FROM users WHERE id = $1
+              SELECT id, email FROM users WHERE id = :id
             SQL,
-            user_to_update_id
+            user_to_update
           );
           expect(success, to_equal(true));
           expect(updated_results.count, to_equal(1));
@@ -122,9 +96,9 @@
             connection,
             User,
             #string SQL
-              SELECT id, email FROM users WHERE id = $1
+              SELECT id, email FROM users WHERE id = :id
             SQL,
-            user_not_to_update_id
+            user_not_to_update
           );
           expect(success, to_equal(true));
           expect(unchanged_results.count, to_equal(1));

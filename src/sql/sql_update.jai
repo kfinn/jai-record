@@ -1,8 +1,6 @@
 SqlUpdate :: struct(
   $SQL_EXPRESSION: string,
-  $ARGS_COUNT: int,
-  $UpdatableFields: Type,
-  $to_sql_update_args: (updatable_fields: *UpdatableFields) -> []Any
+  $UpdatableFields: Type
 ) {
   using updatable_fields: UpdatableFields;
 }
@@ -17,7 +15,7 @@ sql_update :: ($UpdatableFields: Type) -> Type {
 
     updatable_fields_type_info := type_info(UpdatableFields);
     for updatable_fields_type_info.members {
-      array_add(*updates, sprint("%=?", it.name));
+      array_add(*updates, sprint("%=:%", it.name, it.name));
     }
 
     print_to_builder(*sql_expression_builder, join(..updates, separator=", "));
@@ -25,65 +23,84 @@ sql_update :: ($UpdatableFields: Type) -> Type {
     return builder_to_string(*sql_expression_builder);
   }();
 
-  ARGS_COUNT ::  #run type_info(UpdatableFields).members.count;
-
-  // TODO: clean up copypasta from ./sql_insert.jai
-  to_sql_update_args :: (updatable_fields: *UpdatableFields) -> [..]Any {
-    #insert #run () -> string {
-      builder: String_Builder;
-      defer free_buffers(*builder);
-
-      updatable_fields_type_info := type_info(UpdatableFields);
-      print_to_builder(*builder, "result := New([..]Any);\n", updatable_fields_type_info.members.count);
-      for updatable_fields_type_info.members {
-        print_to_builder(*builder, "array_add(result, updatable_fields.%);\n", it.name);
-      }
-
-      print_to_builder(*builder, "return <<result;\n");
-
-      return builder_to_string(*builder);
-    }();
-  };
-
-
-
   return SqlUpdate(
     SQL_EXPRESSION=SQL_EXPRESSION,
-    ARGS_COUNT=ARGS_COUNT,
-    UpdatableFields=UpdatableFields,
-    to_sql_update_args=to_sql_update_args
+    UpdatableFields=UpdatableFields
   );
 }
 
-sql_update_execute :: (table_name: string, update: *$Update, where: *$SqlWhere) -> success: bool {
+sql_update_execute :: ($table_name: string, update: $Update) -> success: bool {
+  return sql_update_execute(table_name, update, EmptySqlWhere.{});
+}
+
+sql_update_execute :: ($table_name: string, update: $Update, where: $SqlWhere) -> success: bool {
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return false;
 
-  expression_string_builder: String_Builder;
-  defer free_buffers(*expression_string_builder);
+  expression_string :: #run () -> string {
+    expression_string_builder: String_Builder;
+    defer free_buffers(*expression_string_builder);
 
-  print_to_builder(*expression_string_builder, "UPDATE % ", table_name);
-  print_to_builder(*expression_string_builder, "SET % ", Update.SQL_EXPRESSION);
+    print_to_builder(*expression_string_builder, "UPDATE % ", table_name);
+    print_to_builder(*expression_string_builder, "SET ");
 
-  where_string := sql_where_to_string(where);
-  if where_string != "" {
-    print_to_builder(*expression_string_builder, "WHERE % ", where_string);
+    for update_component: parse_sql(Update.SQL_EXPRESSION) {
+      component_string := slice(Update.SQL_EXPRESSION, update_component.start_index, update_component.count);
+      if #complete update_component.kind == {
+        case .SQL;
+          print_to_builder(
+            *expression_string_builder,
+            "%",
+            component_string
+          );
+        case .PLACEHOLDER;
+          print_to_builder(
+            *expression_string_builder,
+            "%update.%",
+            SQL_PLACEHOLDER_PREFIX,
+            component_string
+          );
+      }
+    }
+
+    where_string := SqlWhere.to_string();
+    if where_string == "" {
+      return builder_to_string(*expression_string_builder);
+    }
+
+    print_to_builder(*expression_string_builder, " WHERE ");
+    for where_component: parse_sql(where_string) {
+      component_string := slice(where_string, where_component.start_index, where_component.count);
+      if #complete where_component.kind == {
+        case .SQL;
+          print_to_builder(
+            *expression_string_builder,
+            "%",
+            component_string
+          );
+        case .PLACEHOLDER;
+          print_to_builder(
+            *expression_string_builder,
+            "%where.%",
+            SQL_PLACEHOLDER_PREFIX,
+            component_string
+          );
+      }
+    }
+
+    return builder_to_string(*expression_string_builder);
+  }();
+
+  args: struct {
+    update: Update;
+    where: SqlWhere;
   }
-  print_to_builder(*expression_string_builder, ";");
-  expression_string_with_placeholders := builder_to_string(*expression_string_builder);
-
-  args: [Update.ARGS_COUNT + SqlWhere.ARGS_COUNT]Any;
-
-  for Update.to_sql_update_args(*update.updatable_fields) args[it_index] = it;
-  if where != null {
-    for where.args args[Update.ARGS_COUNT + it_index] = it;
-  }
-
-  expression_string, flattened_args := prepare_sql_placeholders_for_args(expression_string_with_placeholders, args);
+  args.update = update;
+  args.where = where;
 
   return execute(
     connection,
     expression_string,
-    ..args
+    args
   );
 }

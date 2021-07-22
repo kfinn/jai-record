@@ -2,7 +2,7 @@ Todo :: struct {
   id: int;
   user_id: int;
   description: string;
-  completed_at: string;
+  completed_at: *string;
   created_at: string;
   updated_at: string;
 }
@@ -10,7 +10,7 @@ Todo :: struct {
 MutableTodoFields :: struct {
   user_id: int;
   description: string;
-  completed_at: string;
+  completed_at: *string;
   created_at: string;
   updated_at: string;
 }
@@ -45,9 +45,4 @@ TodoHasManyTaggings :: HasMany(
     "todo",
     "todo_id"
   )
-);
-
-TodosCreatedAfter :: SqlWhere(
-  SQL_EXPRESSION="created_at > CAST(? AS TIMESTAMP)",
-  ARGS_COUNT=1
 );

@@ -1,5 +1,3 @@
-IdIn :: SqlWhere("id IN ?", 1);
-
 HasMany :: struct(
   $source_repo: Type,
   $destination_repo: Type,
@@ -29,15 +27,15 @@ fetch_has_many :: (
   $has_many: Type,
   source_records: []has_many.Source
 ) -> has_many.Fetched {
-  source_ids: [..]Any;
+  source_ids: [..]has_many.source_repo.IdType;
   for * source_records {
     array_add(*source_ids, it.id);
   }
 
-  foreign_key_in: SqlWhere(#run sprint("% IN (?)", has_many.foreign_key), 1);
-  foreign_key_in.args[0] = source_ids;
+  foreign_key_in: SqlWhere(#run sprint("% IN (:ids)", has_many.foreign_key), struct { ids: []has_many.source_repo.IdType; });
+  foreign_key_in.ids = source_ids;
 
-  return has_many.destination_repo.all(*foreign_key_in);
+  return has_many.destination_repo.where(foreign_key_in);
 }
 
 associate_has_many :: (
