@@ -153,7 +153,6 @@ execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string,
       return builder_to_string(*string_builder);
     }();
 
-    print("%\n", builder_to_string(*query_builder));
     c_command := to_c_string(builder_to_string(*query_builder));
 
     exec_result = PQexecParams(

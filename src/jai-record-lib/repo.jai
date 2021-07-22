@@ -77,7 +77,7 @@ repo_save :: ($repo: Type, record: *repo.Record) -> success: bool {
     copy_mutable_fields(record, *insert.insertable_fields);
     id, success := sql_insert_execute(
       repo.table_name,
-      *insert
+      insert
     );
     if !success return false;
     record.id = id;

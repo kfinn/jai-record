@@ -11,33 +11,13 @@
         expect(
           TestInsert.SQL_EXPRESSION,
           to_equal(
-            "(height, nickname, favorite_ice_cream_flavor_id) VALUES ($1, $2, $3)"
+            "(height, nickname, favorite_ice_cream_flavor_id) VALUES (:height, :nickname, :favorite_ice_cream_flavor_id)"
           )
         );
       });
     });
-
-    describe("to_sql_insert_args", #code{
-      it("includes all values from the insert", #code{
-        TestInsert :: #run sql_insert(struct {
-          height: float;
-          nickname: string;
-          favorite_ice_cream_flavor_id: int;
-        }, int);
-
-        test_insert: TestInsert;
-        test_insert.height = 2.1;
-        test_insert.nickname = "Jamesy";
-        test_insert.favorite_ice_cream_flavor_id = 543;
-
-        sql_insert_args := TestInsert.to_sql_insert_args(*test_insert);
-        expect(<<(cast(*float) sql_insert_args[0].value_pointer), to_equal(2.1));
-        expect(<<(cast(*string) sql_insert_args[1].value_pointer), to_equal("Jamesy"));
-        expect(<<(cast(*int) sql_insert_args[2].value_pointer), to_equal(543));
-      });
-    });
   });
-
+  
   describe(
     "sql_insert_execute",
     before_all=#code {
@@ -58,7 +38,7 @@
       test_user_to_insert: TestUserInsert;
       test_user_to_insert.email = "some@email.gov";
 
-      inserted_id, execute_success := sql_insert_execute("users", *test_user_to_insert);
+      inserted_id, execute_success := sql_insert_execute("users", test_user_to_insert);
       expect(execute_success, to_equal(true));
 
       User :: struct {
@@ -66,11 +46,14 @@
         email: string;
       }
 
-      users, users_success := execute(
+      args: struct { id: int; };
+      args.id = inserted_id;
+
+      users, users_success := execute_with_struct_args(
         connection,
         User,
-        "SELECT id, email FROM users WHERE id = $1",
-        inserted_id
+        "SELECT id, email FROM users WHERE id = :id",
+        args
       );
       expect(users_success, to_equal(true));
       expect(users.count, to_equal(1));
