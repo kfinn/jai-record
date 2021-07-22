@@ -29,29 +29,6 @@ disconnect :: (conn: *PGconn) {
 	}
 };
 
-execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
-  query_result := send_query(conn, command, args);
-	defer PQclear(query_result);
-
-  has_results, success := check_query_result(query_result);
-  if !success return false;
-  return true;
-}
-
-execute :: (conn: *PGconn, $T: Type, command: string, args: ..Any) -> []T, success: bool {
-	query_result := send_query(conn, command, args);
-	defer PQclear(query_result);
-
-  {
-    has_results, success := check_query_result(query_result);
-    if !success	return .[], false;
-    if !has_results return .[], false;
-  }
-
-  results, success := get_results(query_result, T);
-  return results, success;
-}
-
 EmptyArgs :: struct {};
 EMPTY_ARGS :: EmptyArgs.{};
 
@@ -86,45 +63,6 @@ execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string,
 }
 
 #scope_file
-
-send_query :: (conn: *PGconn, command: string, args: []Any) -> *PGresult {
-	pool: Pool;
-	set_allocators(*pool);
-
-	new_context := context;
-	new_context.allocator = pool_allocator;
-	new_context.allocator_data = *pool;
-
-	push_context new_context {
-		param_values := NewArray(args.count, *u8, initialized = false);
-
-		for arg, arg_index: args {
-      if (
-        arg.type == type_info(string) &&
-        (<<cast(*string)arg.value_pointer) == "NULL"
-      ) {
-        param_values[arg_index] = null;
-      } else {
-        param_values[arg_index] = to_c_string(sprint("%", arg));
-      }
-		}
-
-		c_command := to_c_string(command);
-
-    return PQexecParams(
-      conn,
-      c_command,
-      xx args.count,
-      null,
-      param_values.data,
-      null,
-      null,
-      0
-    );
-	}
-
-  return null;
-}
 
 send_query_with_struct_args :: (conn: *PGconn, $command: string, args: $ArgsType) -> *PGresult #modify {
   if ArgsType.type != .STRUCT {
