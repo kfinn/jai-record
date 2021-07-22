@@ -78,15 +78,15 @@
         second_test_todo_for_user_with_some_todos_id := test_todo_insert_results[1].id;
         test_todo_for_user_with_one_todo_id := test_todo_insert_results[2].id;
 
-        test_todo_ids: [..]Any;
+        test_todo_ids: [..]int;
         for * test_todo_insert_results array_add(*test_todo_ids, it.id);
 
-        is_test_todo: SqlWhere("id IN (?)", 1);
-        is_test_todo.args[0] = test_todo_ids;
+        is_test_todo: SqlWhere("id IN (:ids)", struct { ids: []int; });
+        is_test_todo.ids = test_todo_ids;
 
         test_todos_with_test_users := preload(
           TestTodoBelongsToTestUser,
-          TestTodosRepo.where(*is_test_todo)
+          TestTodosRepo.where(is_test_todo)
         );
 
         expect(test_todos_with_test_users.count, to_equal(3));
@@ -198,12 +198,12 @@
 
         test_todo_id := test_todo_insert_results[0].id;
 
-        is_test_todo: SqlWhere("id = ?", 1);
-        is_test_todo.args[0] = test_todo_id;
+        is_test_todo: SqlWhere("id = :id", struct { id: int; });
+        is_test_todo.id = test_todo_id;
 
         test_todos_with_test_users := preload(
           TestTodoBelongsToTestUser,
-          TestTodosRepo.where(*is_test_todo)
+          TestTodosRepo.where(is_test_todo)
         );
 
         test_todo := test_todos_with_test_users[0];

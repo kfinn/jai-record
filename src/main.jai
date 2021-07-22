@@ -22,11 +22,11 @@
 #load "repos/taggings_repo.jai";
 
 #load "sql/sql_delete.jai";
-#load "sql/sql_execute.jai";
 #load "sql/sql_insert.jai";
 #load "sql/sql_select.jai";
 #load "sql/sql_update.jai";
 #load "sql/sql_where.jai";
+#load "sql/parse_sql.jai";
 
 #load "postgres/module.jai";
 

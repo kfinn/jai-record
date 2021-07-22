@@ -121,7 +121,7 @@
           user_not_to_select_id, todo_to_select_id
         );
 
-        is_test_user: SqlWhere("email LIKE 'user_to_select_%'", 0);
+        is_test_user: SqlWhere("email LIKE 'user_to_select_%'");
 
         preloaded_users := preload(
           #run composed_preloader(
@@ -131,7 +131,7 @@
               UserHasManyRecommendedTodos
             )
           ),
-          UsersRepo.where(*is_test_user)
+          UsersRepo.where(is_test_user)
         );
 
         expect(preloaded_users.count, to_equal(2));
@@ -251,18 +251,18 @@
           tag_2_id
         );
 
-        is_test_todo: SqlWhere("id IN (?)", 1);
-        test_todo_ids: [..]Any;
+        is_test_todo: SqlWhere("id IN (:ids)", struct { ids: []int; });
+        test_todo_ids: [..]int;
         array_add(*test_todo_ids, todo_with_taggings_id);
         array_add(*test_todo_ids, todo_without_taggings_id);
-        is_test_todo.args[0] = test_todo_ids;
+        is_test_todo.ids = test_todo_ids;
 
         preloaded_todos := preload(
           #run composed_preloader(
             TodoBelongsToUser,
             TodoHasManyTaggings
           ),
-          TodosRepo.where(*is_test_todo)
+          TodosRepo.where(is_test_todo)
         );
 
         expect(preloaded_todos.count, to_equal(2));

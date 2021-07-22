@@ -56,12 +56,12 @@
         expect(count_result[0].users_count, to_equal(3));
       }
 
-      delete_where: SqlWhere("email LIKE ?", 1);
-      delete_where.args[0] = "test_to_delete_with_like_expression%@gmail.com";
+      delete_where: SqlWhere("email LIKE :email_pattern", struct { email_pattern: string; });
+      delete_where.email_pattern = "test_to_delete_with_like_expression%@gmail.com";
 
       delete_success := sql_delete_execute(
         "users",
-        *delete_where      
+        delete_where      
       );
 
       expect(delete_success, to_equal(true));

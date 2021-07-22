@@ -30,9 +30,9 @@ UsersController :: struct {
 
     print_to_builder(*response_builder, "user: %\n", user.email);
 
-    with_user: SqlWhere("user_id = ?", 1);
-    with_user.args[0] = user.id;
-    for todo: TodosRepo.where(*with_user) {
+    with_user: SqlWhere("user_id = :id", struct { id: int; });
+    with_user.id = user.id;
+    for todo: TodosRepo.where(with_user) {
       print_to_builder(*response_builder, "  todo[%]: %\n", todo.id, todo.description);
     }
 

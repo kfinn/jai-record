@@ -100,18 +100,18 @@
           second_tag_id
         );
 
-        is_test_todo: SqlWhere("id IN (?)", 1);
-        test_ids: [..]Any;
+        is_test_todo: SqlWhere("id IN (:ids)", struct { ids: []int; });
+        test_ids: [..]int;
         array_add(*test_ids, todo_with_taggings_id);
         array_add(*test_ids, todo_with_no_taggings_id);
-        is_test_todo.args[0] = test_ids;
+        is_test_todo.ids = test_ids;
 
         todos_with_taggings_and_tags := preload(
           #run nested_preloader(
             TodoHasManyTaggings,
             TaggingBelongsToTag,
           ),
-          TodosRepo.where(*is_test_todo)
+          TodosRepo.where(is_test_todo)
         );
 
         expect(todos_with_taggings_and_tags.count, to_equal(2));
@@ -214,18 +214,18 @@
           user.id
         );
 
-        is_test_tag: SqlWhere("id IN (?)", 1);
-        test_tag_ids: [..]Any;
+        is_test_tag: SqlWhere("id IN (:ids)", struct { ids: []int; });
+        test_tag_ids: [..]int;
         array_add(*test_tag_ids, first_tag_id);
         array_add(*test_tag_ids, second_tag_id);
-        is_test_tag.args[0] = test_tag_ids;
+        is_test_tag.ids = test_tag_ids;
 
         tags_with_users_and_todos := preload(
           #run nested_preloader(
             TagBelongsToUser,
             UserHasManyTodods
           ),
-          TagsRepo.where(*is_test_tag)
+          TagsRepo.where(is_test_tag)
         );
 
         expect(tags_with_users_and_todos.count, to_equal(2));

@@ -27,7 +27,7 @@ fetch_belongs_to :: (
   $belongs_to: Type,
   source_records: []belongs_to.Source
 ) -> belongs_to.Fetched {
-  destination_ids: [..]Any;
+  destination_ids: [..]belongs_to.destination_repo.IdType;
   for * source_records {
     #insert #run sprint(
       "array_add(*destination_ids, it.%);\n",
@@ -35,10 +35,10 @@ fetch_belongs_to :: (
     );
   }
 
-  id_in: SqlWhere("id IN (?)", 1);
-  id_in.args[0] = destination_ids;
+  id_in: SqlWhere("id IN (:ids)", struct { ids: []belongs_to.destination_repo.IdType; });
+  id_in.ids = destination_ids;
 
-  return belongs_to.destination_repo.where(*id_in);
+  return belongs_to.destination_repo.where(id_in);
 }
 
 associate_belongs_to :: (

@@ -1,7 +1,7 @@
 SqlInsert :: struct(
   $SQL_EXPRESSION: string,
   $IdType: Type,
-  $InsertableFields: Type,
+  $InsertableFields: Type
 ) {
   using insertable_fields: InsertableFields;
 }

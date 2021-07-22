@@ -46,8 +46,3 @@ TodoHasManyTaggings :: HasMany(
     "todo_id"
   )
 );
-
-TodosCreatedAfter :: SqlWhere(
-  SQL_EXPRESSION="created_at > CAST(? AS TIMESTAMP)",
-  ARGS_COUNT=1
-);

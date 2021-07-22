@@ -36,18 +36,13 @@ sql_select_execute :: ($Select: Type, $sql_from: string, where: $Where) -> []Sel
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return Select.Record.[], false;
 
-  expression_string := sql_select_to_string(Select.SQL_EXPRESSION, sql_from, where);
-
-  args := where.args;
-
-  prepared_sql, prepared_args := prepare_sql_placeholders_for_args(expression_string, args);
-
-  results, execute_success := execute(connection, Select.Record, prepared_sql, ..prepared_args);
+  expression_string :: #run sql_select_to_string(Select.SQL_EXPRESSION, sql_from, Where);
+  results, execute_success := execute_with_struct_args(connection, Select.Record, expression_string, where);
   if !execute_success return Select.Record.[], false;
   return results, true;
 }
 
-sql_select_to_string :: ($select: string, $from: string, where: $Where) -> string {
+sql_select_to_string :: ($select: string, $from: string, $Where: Type) -> string {
   return #run () -> string {
     string_builder: String_Builder;
     defer free_buffers(*string_builder);

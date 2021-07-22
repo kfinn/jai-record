@@ -60,15 +60,75 @@ execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string)
   return results, success;
 }
 
-execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string, args: $ArgsType) -> []ResultType, success: bool #modify {
+execute_with_struct_args :: (conn: *PGconn, $command: string, args: $ArgsType) -> bool {
+  query_result := send_query_with_struct_args(conn, command, args);
+
+  has_results, success := check_query_result(query_result);
+  if !success return false;
+  return true;
+}
+
+execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string, args: $ArgsType) -> []ResultType, success: bool {
+  query_result := send_query_with_struct_args(conn, command, args);
+
+  {
+    has_results, success := check_query_result(query_result);
+    if !success	return .[], false;
+    if !has_results return .[], false;
+  }
+
+  results, success := get_results(query_result, ResultType);
+  return results, success;
+}
+
+#scope_file
+
+send_query :: (conn: *PGconn, command: string, args: []Any) -> *PGresult {
+	pool: Pool;
+	set_allocators(*pool);
+
+	new_context := context;
+	new_context.allocator = pool_allocator;
+	new_context.allocator_data = *pool;
+
+	push_context new_context {
+		param_values := NewArray(args.count, *u8, initialized = false);
+
+		for arg, arg_index: args {
+      if (
+        arg.type == type_info(string) &&
+        (<<cast(*string)arg.value_pointer) == "NULL"
+      ) {
+        param_values[arg_index] = null;
+      } else {
+        param_values[arg_index] = to_c_string(sprint("%", arg));
+      }
+		}
+
+		c_command := to_c_string(command);
+
+    return PQexecParams(
+      conn,
+      c_command,
+      xx args.count,
+      null,
+      param_values.data,
+      null,
+      null,
+      0
+    );
+	}
+
+  return null;
+}
+
+send_query_with_struct_args :: (conn: *PGconn, $command: string, args: $ArgsType) -> *PGresult #modify {
   if ArgsType.type != .STRUCT {
     ArgsType = null;
   }
-}{
+} {
   pool: Pool;
   set_allocators(*pool);
-
-  exec_result: *PGresult;
 
   {
     push_allocator(pool_allocator, *pool);
@@ -85,7 +145,7 @@ execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string,
       string_builder: String_Builder;
       defer free_buffers(*string_builder);
 
-      for component: parse_command(command) {
+      for component: parse_sql(command) {
         if component.kind == {
           case .SQL;
             print_to_builder(
@@ -155,7 +215,7 @@ execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string,
 
     c_command := to_c_string(builder_to_string(*query_builder));
 
-    exec_result = PQexecParams(
+    return PQexecParams(
       conn,
       c_command,
       xx placeholder_values.count,
@@ -166,120 +226,6 @@ execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string,
       0
     );
   }
-
-  results, success := get_results(exec_result, ResultType);
-  return results, success;
-}
-
-CommandComponent :: struct {
-  Kind :: enum {
-    SQL;
-    PLACEHOLDER;
-  }
-
-  kind: Kind;
-  start_index: int;
-  count: int;
-}
-
-parse_command :: (command: string) -> []CommandComponent, success: bool {
-  command_components: [..]CommandComponent;
-
-  escape_exit: string;
-
-  current_component: CommandComponent;
-  current_component.kind = .SQL;
-  current_component.start_index = 0;
-
-  for index: 0..command.count - 1 {
-    remainder := slice(command, index, command.count - index);
-    if current_component.kind == {
-      case .SQL;
-        if escape_exit {
-          if begins_with(remainder, escape_exit) {
-            escape_exit = "";
-          }
-        } else {
-          if remainder[0] == #char ":" {
-            current_component.count = index - current_component.start_index;
-            array_add(*command_components, current_component);
-
-            current_component.kind = .PLACEHOLDER;
-            current_component.start_index = index + 1;
-          } else if begins_with(remainder, "\"") {
-            escape_exit = "\"";
-          } else if begins_with(remainder, "'") {
-            escape_exit = "'";
-          } else if begins_with(remainder, "--") {
-            escape_exit = "\n";
-          } else if begins_with(remainder, "/*") {
-            escape_exit = "*/";
-          }
-        }
-      case .PLACEHOLDER;
-        if !is_placeholder_character(remainder[0]) {
-          current_component.count = index - current_component.start_index;
-          array_add(*command_components, current_component);
-
-          current_component.kind = .SQL;
-          current_component.start_index = index;
-        }
-    }
-  }
-  current_component.count = command.count - current_component.start_index;
-  array_add(*command_components, current_component);
-  return command_components, true;
-}
-
-is_placeholder_character :: (character: u8) -> bool {
-  return (
-    (character >= #char "a" && character <= #char "z") ||
-    (character >= #char "A" && character <= #char "Z") ||
-    (character >= #char "0" && character <= #char "9") ||
-    character == #char "_" ||
-    character == #char "."
-  );
-}
-
-#scope_file
-
-send_query :: (conn: *PGconn, command: string, args: []Any) -> *PGresult {
-	pool: Pool;
-	set_allocators(*pool);
-
-	new_context := context;
-	new_context.allocator = pool_allocator;
-	new_context.allocator_data = *pool;
-
-	push_context new_context {
-		param_values := NewArray(args.count, *u8, initialized = false);
-
-		for arg, arg_index: args {
-      if (
-        arg.type == type_info(string) &&
-        (<<cast(*string)arg.value_pointer) == "NULL"
-      ) {
-        param_values[arg_index] = null;
-      } else {
-        param_values[arg_index] = to_c_string(sprint("%", arg));
-      }
-		}
-
-		c_command := to_c_string(command);
-
-    return PQexecParams(
-      conn,
-      c_command,
-      xx args.count,
-      null,
-      param_values.data,
-      null,
-      null,
-      0
-    );
-	}
-
-  return null;
 }
 
 check_query_result :: (query_result: *PGresult) -> has_results: bool, success: bool {
