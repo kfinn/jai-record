@@ -32,25 +32,25 @@ disconnect :: (conn: *PGconn) {
 EmptyArgs :: struct {};
 EMPTY_ARGS :: EmptyArgs.{};
 
-execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string) -> []ResultType, success: bool {
-  results, success := execute_with_struct_args(conn, ResultType, command, EMPTY_ARGS);
+execute :: (conn: *PGconn, $ResultType: Type, $command: string) -> []ResultType, success: bool {
+  results, success := execute(conn, ResultType, command, EMPTY_ARGS);
   return results, success;
 }
 
-execute_with_struct_args :: (conn: *PGconn, $command: string) -> bool {
-  return execute_with_struct_args(conn, command, EMPTY_ARGS);
+execute :: (conn: *PGconn, $command: string) -> bool {
+  return execute(conn, command, EMPTY_ARGS);
 }
 
-execute_with_struct_args :: (conn: *PGconn, $command: string, args: $ArgsType) -> bool {
-  query_result := send_query_with_struct_args(conn, command, args);
+execute :: (conn: *PGconn, $command: string, args: $ArgsType) -> bool {
+  query_result := send_query(conn, command, args);
 
   has_results, success := check_query_result(query_result);
   if !success return false;
   return true;
 }
 
-execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string, args: $ArgsType) -> []ResultType, success: bool {
-  query_result := send_query_with_struct_args(conn, command, args);
+execute :: (conn: *PGconn, $ResultType: Type, $command: string, args: $ArgsType) -> []ResultType, success: bool {
+  query_result := send_query(conn, command, args);
 
   {
     has_results, success := check_query_result(query_result);
@@ -64,7 +64,7 @@ execute_with_struct_args :: (conn: *PGconn, $ResultType: Type, $command: string,
 
 #scope_file
 
-send_query_with_struct_args :: (conn: *PGconn, $command: string, args: $ArgsType) -> *PGresult #modify {
+send_query :: (conn: *PGconn, $command: string, args: $ArgsType) -> *PGresult #modify {
   if ArgsType.type != .STRUCT {
     ArgsType = null;
   }

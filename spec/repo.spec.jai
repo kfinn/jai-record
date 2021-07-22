@@ -4,11 +4,11 @@
       "with an unpersisted record",
       before_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "BEGIN");
+        execute(connection, "BEGIN");
       },
       after_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "ROLLBACK");
+        execute(connection, "ROLLBACK");
       },
       body=#code{
         it("inserts the user into the database and sets the user ID", #code{
@@ -33,7 +33,7 @@
             email: string;
           }
           connection := jai_record_pg_connection();
-          select_results := execute_with_struct_args(
+          select_results := execute(
             connection,
             SelectResult,
             "SELECT id, email FROM users WHERE id = :id",
@@ -50,11 +50,11 @@
       "with a persisted record",
       before_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "BEGIN");
+        execute(connection, "BEGIN");
       },
       after_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "ROLLBACK");
+        execute(connection, "ROLLBACK");
       },
       body=#code{
         it("updates the user in the database", #code{
@@ -69,7 +69,7 @@
 
           InsertResult :: struct { id: int; }
           connection := jai_record_pg_connection();
-          insert_results := execute_with_struct_args(
+          insert_results := execute(
             connection,
             InsertResult,
             "INSERT INTO users (email) VALUES ('existing_user@email.com') RETURNING id"
@@ -88,7 +88,7 @@
           SelectResult :: struct { id: int; email: string; }
           args: struct { user_id: int; };
           args.user_id = user_id;
-          select_results := execute_with_struct_args(
+          select_results := execute(
             connection,
             SelectResult,
             "SELECT id, email FROM users WHERE id = :user_id",
@@ -107,17 +107,17 @@
       "with a persisted record",
       before_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "BEGIN");
+        execute(connection, "BEGIN");
       },
       after_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "ROLLBACK");
+        execute(connection, "ROLLBACK");
       },
       body=#code{
         it("deletes the record", #code{
           connection := jai_record_pg_connection();
           InsertResult :: struct { id: int; }
-          insert_results := execute_with_struct_args(
+          insert_results := execute(
             connection,
             InsertResult,
             "INSERT INTO users (email) VALUES ('to_delete@test.edu') RETURNING id"

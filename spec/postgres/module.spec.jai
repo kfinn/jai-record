@@ -1,14 +1,14 @@
 #run describe("postgres", #code{
-  describe("execute_with_struct_args", #code{
+  describe("execute", #code{
     describe(
       "with nullable args",
       before_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "BEGIN");
+        execute(connection, "BEGIN");
       },
       after_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "ROLLBACK");
+        execute(connection, "ROLLBACK");
       },
       body=#code{
         connection := jai_record_pg_connection();
@@ -20,7 +20,7 @@
             updated_at: string;
           }
 
-          insert_users_results := execute_with_struct_args(
+          insert_users_results := execute(
             connection,
             User,
             "INSERT INTO users (email) VALUES ('some_email@whatever.gov') RETURNING id, email, created_at, updated_at"
@@ -50,7 +50,7 @@
           first_todo_creation.completed_at = null;
 
           {
-            insert_todos_results := execute_with_struct_args(
+            insert_todos_results := execute(
               connection,
               Todo,
               #string SQL
@@ -73,7 +73,7 @@
           second_todo_creation.completed_at = *completed_at;
 
           {
-            insert_todos_results := execute_with_struct_args(
+            insert_todos_results := execute(
               connection,
               Todo,
               #string SQL
@@ -95,11 +95,11 @@
       "with array args",
       before_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "BEGIN");
+        execute(connection, "BEGIN");
       },
       after_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "ROLLBACK");
+        execute(connection, "ROLLBACK");
       },
       body=#code {
         connection := jai_record_pg_connection();
@@ -108,7 +108,7 @@
           id: int;
         }
 
-        insert_results := execute_with_struct_args(
+        insert_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -132,7 +132,7 @@
           email: string;
         }
 
-        select_results := execute_with_struct_args(
+        select_results := execute(
           connection,
           User,
           "SELECT id, email FROM users WHERE id IN (:ids)",

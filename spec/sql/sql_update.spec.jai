@@ -24,11 +24,11 @@
     "sql_update_execute",
     before_all=#code {
       connection := jai_record_pg_connection();
-      execute_with_struct_args(connection, "BEGIN");
+      execute(connection, "BEGIN");
     },
     after_all=#code {
       connection := jai_record_pg_connection();
-      execute_with_struct_args(connection, "ROLLBACK");
+      execute(connection, "ROLLBACK");
     },
     body=#code {
       it("updates records in the database", #code {
@@ -36,7 +36,7 @@
         expect(jai_record_pg_connection_success, to_equal(true));
 
         ExecuteInsertResult :: struct { id: int; };
-        execute_insert_result, execute_insert_success := execute_with_struct_args(
+        execute_insert_result, execute_insert_success := execute(
           connection,
           ExecuteInsertResult,
           #string SQL
@@ -78,7 +78,7 @@
         );
 
         {
-          updated_results, success := execute_with_struct_args(
+          updated_results, success := execute(
             connection,
             User,
             #string SQL
@@ -92,7 +92,7 @@
         }
 
         {
-          unchanged_results, success := execute_with_struct_args(
+          unchanged_results, success := execute(
             connection,
             User,
             #string SQL

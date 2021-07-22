@@ -37,7 +37,7 @@ sql_select_execute :: ($Select: Type, $sql_from: string, where: $Where) -> []Sel
   if !jai_record_pg_connection_success return Select.Record.[], false;
 
   expression_string :: #run sql_select_to_string(Select.SQL_EXPRESSION, sql_from, Where);
-  results, execute_success := execute_with_struct_args(connection, Select.Record, expression_string, where);
+  results, execute_success := execute(connection, Select.Record, expression_string, where);
   if !execute_success return Select.Record.[], false;
   return results, true;
 }

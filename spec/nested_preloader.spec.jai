@@ -3,11 +3,11 @@
     "preload_nested_preloader",
     before_all=#code {
       connection := jai_record_pg_connection();
-      execute_with_struct_args(connection, "BEGIN");
+      execute(connection, "BEGIN");
     },
     after_all=#code {
       connection := jai_record_pg_connection();
-      execute_with_struct_args(connection, "ROLLBACK");
+      execute(connection, "ROLLBACK");
     },
     body=#code{
       it("preloads nested has many relationships", #code{
@@ -46,7 +46,7 @@
 
         connection := jai_record_pg_connection();
         InsertResult :: struct { id: int; }
-        users_insert_results := execute_with_struct_args(
+        users_insert_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -57,7 +57,7 @@
         );
         user := users_insert_results[0];
 
-        toods_insert_results := execute_with_struct_args(
+        toods_insert_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -72,7 +72,7 @@
         todo_with_taggings_id := toods_insert_results[0].id;
         todo_with_no_taggings_id := toods_insert_results[1].id;
 
-        tags_insert_results := execute_with_struct_args(
+        tags_insert_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -96,7 +96,7 @@
         insert_taggings_args.first_tag_id = first_tag_id;
         insert_taggings_args.second_tag_id = second_tag_id;
 
-        execute_with_struct_args(
+        execute(
           connection,
           #string SQL
             INSERT INTO taggings (todo_id, tag_id)
@@ -182,7 +182,7 @@
 
         connection := jai_record_pg_connection();
         InsertResult :: struct { id: int; }
-        insert_user_results := execute_with_struct_args(
+        insert_user_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -194,7 +194,7 @@
         );
         user := insert_user_results[0];
 
-        insert_tags_results := execute_with_struct_args(
+        insert_tags_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -209,7 +209,7 @@
         first_tag_id := insert_tags_results[0].id;
         second_tag_id := insert_tags_results[1].id;
 
-        execute_with_struct_args(
+        execute(
           connection,
           #string SQL
             INSERT INTO todos (user_id, description)

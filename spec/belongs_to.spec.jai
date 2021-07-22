@@ -3,11 +3,11 @@
     "preload",
     before_all=#code {
       connection := jai_record_pg_connection();
-      execute_with_struct_args(connection, "BEGIN");
+      execute(connection, "BEGIN");
     },
     after_all=#code {
       connection := jai_record_pg_connection();
-      execute_with_struct_args(connection, "ROLLBACK");
+      execute(connection, "ROLLBACK");
     },
     body=#code{
       it("preloads all associated records", #code{
@@ -44,7 +44,7 @@
 
         InsertResult :: struct { id: int; }
 
-        test_user_insert_results := execute_with_struct_args(
+        test_user_insert_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -63,7 +63,7 @@
         todo_insert_args.user_with_some_todos_id = test_user_insert_results[0].id;
         todo_insert_args.user_with_one_todo_id = test_user_insert_results[1].id;
 
-        test_todo_insert_results := execute_with_struct_args(
+        test_todo_insert_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -174,7 +174,7 @@
 
         InsertResult :: struct { id: int; }
 
-        test_user_insert_results := execute_with_struct_args(
+        test_user_insert_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -187,7 +187,7 @@
 
         test_user := test_user_insert_results[0];
 
-        test_todo_insert_results := execute_with_struct_args(
+        test_todo_insert_results := execute(
           connection,
           InsertResult,
           #string SQL

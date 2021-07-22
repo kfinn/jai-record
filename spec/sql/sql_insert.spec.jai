@@ -22,11 +22,11 @@
     "sql_insert_execute",
     before_all=#code {
       connection := jai_record_pg_connection();
-      execute_with_struct_args(connection, "BEGIN");
+      execute(connection, "BEGIN");
     },
     after_all=#code {
       connection := jai_record_pg_connection();
-      execute_with_struct_args(connection, "ROLLBACK");
+      execute(connection, "ROLLBACK");
     },
     body=#code{
       connection := jai_record_pg_connection();
@@ -49,7 +49,7 @@
       args: struct { id: int; };
       args.id = inserted_id;
 
-      users, users_success := execute_with_struct_args(
+      users, users_success := execute(
         connection,
         User,
         "SELECT id, email FROM users WHERE id = :id",

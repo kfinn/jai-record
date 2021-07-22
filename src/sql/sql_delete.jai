@@ -8,5 +8,5 @@ sql_delete_execute :: ($from: string, where: $SqlWhere) -> success: bool {
     SqlWhere.to_string()
   );
 
-  return execute_with_struct_args(connection, command, where);
+  return execute(connection, command, where);
 }

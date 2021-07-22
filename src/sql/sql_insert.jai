@@ -45,7 +45,7 @@ sql_insert_execute :: ($into: string, insert: $Insert) -> id: Insert.IdType, suc
     id: Insert.IdType;
   }
 
-  results, execute_success := execute_with_struct_args(
+  results, execute_success := execute(
     connection,
     Result,
     expression_string,

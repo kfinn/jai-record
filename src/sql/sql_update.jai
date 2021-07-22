@@ -98,7 +98,7 @@ sql_update_execute :: ($table_name: string, update: $Update, where: $SqlWhere) -
   args.update = update;
   args.where = where;
 
-  return execute_with_struct_args(
+  return execute(
     connection,
     expression_string,
     args

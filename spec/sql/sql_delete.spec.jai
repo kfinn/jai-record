@@ -2,11 +2,11 @@
   "sql_delete.jai", 
   before_all=#code {
     connection := jai_record_pg_connection();
-    execute_with_struct_args(connection, "BEGIN");
+    execute(connection, "BEGIN");
   },
   after_all=#code {
     connection := jai_record_pg_connection();
-    execute_with_struct_args(connection, "ROLLBACK");
+    execute(connection, "ROLLBACK");
   },
   body=#code {
     it("delete, with a where expression, deletes matching records", #code {
@@ -17,7 +17,7 @@
         id: int;
       }
 
-      execute_insert_result, execute_insert_success := execute_with_struct_args(
+      execute_insert_result, execute_insert_success := execute(
         connection,
         ExecuteInsertResult,
         #string SQL
@@ -45,7 +45,7 @@
         ids[2] = execute_insert_result[2].id;
         count_args.ids = ids;
 
-        count_result, count_success := execute_with_struct_args(
+        count_result, count_success := execute(
           connection,
           CountResult,
           #string SQL
@@ -79,7 +79,7 @@
         ids[2] = execute_insert_result[2].id;
         count_args.ids = ids;
 
-        count_result, count_success := execute_with_struct_args(
+        count_result, count_success := execute(
           connection,
           CountResult,
           #string SQL

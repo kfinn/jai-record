@@ -61,10 +61,10 @@
       "with some todos belonging to different users",
       before_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "BEGIN");
+        execute(connection, "BEGIN");
 
         UserInsertResult :: struct { id: int; };
-        user_insert_result := execute_with_struct_args(
+        user_insert_result := execute(
           connection,
           UserInsertResult,
           #string SQL
@@ -78,7 +78,7 @@
 
         user_with_todos := user_insert_result[0];
 
-        execute_with_struct_args(
+        execute(
           connection,
           #string SQL
             INSERT INTO todos (user_id, description, completed_at)
@@ -91,7 +91,7 @@
       },
       after_all=#code {
         connection := jai_record_pg_connection();
-        execute_with_struct_args(connection, "ROLLBACK");
+        execute(connection, "ROLLBACK");
       },
       body=#code {
         it("when used with sql_select_execute, returns records matching compound criteria", #code{

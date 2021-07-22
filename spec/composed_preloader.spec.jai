@@ -3,11 +3,11 @@
     "preload_composed_preloader",
     before_all=#code {
       connection := jai_record_pg_connection();
-      execute_with_struct_args(connection, "BEGIN");
+      execute(connection, "BEGIN");
     },
     after_all=#code {
       connection := jai_record_pg_connection();
-      execute_with_struct_args(connection, "ROLLBACK");
+      execute(connection, "ROLLBACK");
     },
     body=#code{
       it("preloads multiple has many relationships", #code{
@@ -66,7 +66,7 @@
 
         InsertResult :: struct { id: int; }
 
-        insert_users_results := execute_with_struct_args(
+        insert_users_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -89,7 +89,7 @@
         insert_todos_args.user_to_select_id = user_to_select_id;
         insert_todos_args.user_not_to_select_id = user_not_to_select_id;
 
-        insert_todos_results := execute_with_struct_args(
+        insert_todos_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -104,7 +104,7 @@
         todo_to_select_id := insert_todos_results[0].id;
         todo_to_recommend_id := insert_todos_results[1].id;
 
-        execute_with_struct_args(
+        execute(
           connection,
           #string SQL
             INSERT INTO tags (user_id, description)
@@ -126,7 +126,7 @@
         insert_recommended_todos_args.user_not_to_select_id = user_not_to_select_id;
         insert_recommended_todos_args.todo_to_select_id = todo_to_select_id;
 
-        execute_with_struct_args(
+        execute(
           connection,
           #string SQL
             INSERT INTO recommended_todos (user_id, todo_id)
@@ -212,7 +212,7 @@
 
         InsertResult :: struct { id: int; }
 
-        insert_users_results := execute_with_struct_args(
+        insert_users_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -224,7 +224,7 @@
         );
         user := insert_users_results[0];
 
-        insert_todos_results := execute_with_struct_args(
+        insert_todos_results := execute(
           connection,
           InsertResult,
           #string SQL
@@ -239,7 +239,7 @@
         todo_with_taggings_id := insert_todos_results[0].id;
         todo_without_taggings_id := insert_todos_results[1].id;
 
-        insert_tags_result := execute_with_struct_args(
+        insert_tags_result := execute(
           connection,
           InsertResult,
           #string SQL
@@ -263,7 +263,7 @@
         insert_taggings_args.tag_1_id = tag_1_id;
         insert_taggings_args.tag_2_id = tag_2_id;
 
-        execute_with_struct_args(
+        execute(
           connection,
           #string SQL
             INSERT INTO taggings (todo_id, tag_id)
