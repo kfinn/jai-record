@@ -30,6 +30,7 @@
 
 #load "json/lex_json.jai";
 #load "json/parse_json_value.jai";
+#load "json/parse_json_params.jai";
 
 #load "postgres/module.jai";
 
