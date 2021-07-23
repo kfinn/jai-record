@@ -52,7 +52,7 @@ TodosController :: struct {
         completed_at: string;
       }
     }
-    params, json_parse_success := json_parse_string(request.body, Params);
+    json_parse_success, params, params_meta := parse_json_params(Params, request.body);
     if !json_parse_success {
       response := sprint("Status: 422 Unprocessable Entity\r\nContent-Type: text/plan\r\n\r\nUnprocessable Entity");
       bytes_written := write(request.connection_fd, response);
@@ -68,10 +68,12 @@ TodosController :: struct {
       return;
     }
 
-    if params.todo.completed_at {
-      todo.completed_at = *params.todo.completed_at;
-    } else {
-      todo.completed_at = null;
+    if params_meta.todo.completed_at.is_set {
+      if params.todo.completed_at {
+        todo.completed_at = *params.todo.completed_at;
+      } else {
+        todo.completed_at = null;
+      }
     }
 
     if TodosRepo.save(todo) {

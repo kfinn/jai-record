@@ -7,7 +7,6 @@
 
 #import "jai-socket";
 #import "uniform";
-#import "jason";
 
 #load "jai-record-lib/repo.jai";
 #load "jai-record-lib/preloaders.jai";
