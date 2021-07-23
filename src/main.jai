@@ -28,6 +28,9 @@
 #load "sql/sql_where.jai";
 #load "sql/parse_sql.jai";
 
+#load "json/lex_json.jai";
+#load "json/parse_json_value.jai";
+
 #load "postgres/module.jai";
 
 #load "scgi/scgi_server.jai";
