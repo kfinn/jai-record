@@ -1,0 +1,7 @@
+Hi,
+
+I mentioned an error with `#modify` in discord yesterday (https://discord.com/channels/661732390355337246/661732390355337249/867957720714735736) and now I have a repro for you.
+
+This repro is simpler than the case I was describing, where I was operating on a `$args: ..Any` param in the modified procedure, but I suspect they're caused by a similar issue.
+
+Let me know if you need any more info from me!

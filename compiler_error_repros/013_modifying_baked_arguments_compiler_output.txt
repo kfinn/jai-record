@@ -1,0 +1,7 @@
+root@fd12bfd4e248:/workspace# jai-linux compiler_error_repros/013_modifying_baked_arguments.jai
+
+In workspace #2 ("Target Program"):
+/workspace/compiler_error_repros/013_modifying_baked_arguments.jai:4,18: Error: Non-constant expression in array declaration.
+
+    modified :: ($arg: int) -> $T #modify {
+      T = type_info([arg]int);
