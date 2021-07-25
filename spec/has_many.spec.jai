@@ -1,11 +1,11 @@
 #run describe("has_many.jai", #code{
   describe(
     "preload",
-    before_all=#code {
+    before_each=#code {
       connection := jai_record_pg_connection();
       execute(connection, "BEGIN");
     },
-    after_all=#code {
+    after_each=#code {
       connection := jai_record_pg_connection();
       execute(connection, "ROLLBACK");
     },

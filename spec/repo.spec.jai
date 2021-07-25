@@ -1,16 +1,16 @@
-#run describe("repo.jai", #code{
-  describe("save", #code{
-    describe(
-      "with an unpersisted record",
-      before_all=#code {
-        connection := jai_record_pg_connection();
-        execute(connection, "BEGIN");
-      },
-      after_all=#code {
-        connection := jai_record_pg_connection();
-        execute(connection, "ROLLBACK");
-      },
-      body=#code{
+#run describe(
+  "repo.jai",
+  before_each=#code{
+    connection := jai_record_pg_connection();
+    execute(connection, "BEGIN");
+  },
+  after_each=#code{
+    connection := jai_record_pg_connection();
+    execute(connection, "ROLLBACK");
+  },
+  body=#code{
+    describe("save", #code{
+      describe("with an unpersisted record", #code{
         it("inserts the user into the database and sets the user ID", #code{
           User :: struct {
             id: int;
@@ -44,19 +44,8 @@
           expect(select_result.id, to_equal(new_user.id));
           expect(select_result.email, to_equal("new_user_to_create@email.edu"));
         });
-      }
-    );
-    describe(
-      "with a persisted record",
-      before_all=#code {
-        connection := jai_record_pg_connection();
-        execute(connection, "BEGIN");
-      },
-      after_all=#code {
-        connection := jai_record_pg_connection();
-        execute(connection, "ROLLBACK");
-      },
-      body=#code{
+      });
+      describe("with a persisted record", #code{
         it("updates the user in the database", #code{
           User :: struct {
             id: int;
@@ -99,21 +88,10 @@
           expect(select_result.id, to_equal(user_id));
           expect(select_result.email, to_equal("updated@email.org"));
         });
-      }
-    );
-  });
-  describe("delete", #code{
-    describe(
-      "with a persisted record",
-      before_all=#code {
-        connection := jai_record_pg_connection();
-        execute(connection, "BEGIN");
-      },
-      after_all=#code {
-        connection := jai_record_pg_connection();
-        execute(connection, "ROLLBACK");
-      },
-      body=#code{
+      });
+    });
+    describe("delete", #code{
+      describe("with a persisted record", #code{
         it("deletes the record", #code{
           connection := jai_record_pg_connection();
           InsertResult :: struct { id: int; }
@@ -142,7 +120,7 @@
           user = UsersRepo.find(user_id);
           expect(user, to_be_null());
         });
-      }
-    );
-  });
+      });
+    }
+  );
 });

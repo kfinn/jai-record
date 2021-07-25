@@ -59,7 +59,7 @@
 
     describe(
       "with some todos belonging to different users",
-      before_all=#code {
+      before_each=#code {
         connection := jai_record_pg_connection();
         execute(connection, "BEGIN");
 
@@ -89,7 +89,7 @@
           user_with_todos
         );
       },
-      after_all=#code {
+      after_each=#code {
         connection := jai_record_pg_connection();
         execute(connection, "ROLLBACK");
       },

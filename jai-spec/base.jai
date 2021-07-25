@@ -1,17 +1,25 @@
 ANY_FAILURES := false;
 
-#add_context did_assert_during_expect: bool = false;
-
 EMPTY_CODE :: #code {};
 
 describe :: (
   name: string,
   body: Code,
   before_all: Code = EMPTY_CODE,
-  after_all: Code = EMPTY_CODE
+  before_each: Code = EMPTY_CODE,
+  after_all: Code = EMPTY_CODE,
+  after_each: Code = EMPTY_CODE
 ) #expand {
   description := name;
   describe :: nested_describe;
+
+  inherited_before_each :: () #expand {
+    #insert before_each;
+  }
+
+  inherited_after_each :: () #expand {
+    #insert after_each;
+  }
 
   if before_all != EMPTY_CODE #insert before_all;
   #insert_internal body;
@@ -22,20 +30,45 @@ nested_describe :: (
   description_suffix: string,
   body: Code,
   before_all: Code = EMPTY_CODE,
-  after_all: Code = EMPTY_CODE
+  before_each: Code = EMPTY_CODE,
+  after_all: Code = EMPTY_CODE,
+  after_each: Code = EMPTY_CODE
 ) #expand {
   description := sprint("% %", `description, description_suffix);
   describe :: nested_describe;
+
+  local_inherited_before_each :: `inherited_before_each;
+
+  inherited_before_each :: () #expand {
+    local_inherited_before_each();
+    #insert before_each;
+  };
+
+  local_inherited_after_each :: `inherited_after_each;
+
+  inherited_after_each :: () #expand {
+    #insert after_each;
+    local_inherited_after_each();
+  };
 
   if before_all != EMPTY_CODE #insert before_all;
   #insert_internal body;
   if after_all != EMPTY_CODE #insert after_all;
 }
 
+evaluate_it :: (
+  description: string,
+  $body: Code
+) {
+  #insert_internal body;
+}
+
 it :: (description_suffix: string, body: Code) #expand {
   description := sprint("% %", `description, description_suffix);
 
-  #insert_internal body;
+  `inherited_before_each();
+  evaluate_it(description, body);
+  `inherited_after_each();
 }
 
 to_equal :: (value: $T) -> ToEqual(T) {
@@ -94,7 +127,9 @@ expect :: (value: $Value, matcher: $MatcherType, loc := #caller_location) #expan
   if matches(value, matcher) return;
 
   ANY_FAILURES = true;
-  print("Failed expectation: %\n  Expected it % %, got: %\n%\n", `description, MatcherType, matcher, value, loc);
+  print("Failed expectation: %\n  Expected it % %, got: %\n%\n\n", `description, MatcherType, matcher, value, loc);
+
+  `return;
 }
 
 matches :: (value: $Value, matcher: ToEqual(Value)) -> bool {
@@ -129,7 +164,7 @@ matches :: (value: $Value, matcher: ToBeginWith) -> bool {
 }
 
 specs_verify :: () {
-  assert(!ANY_FAILURES);
+  assert(!ANY_FAILURES, "Tests failed");
 }
 
 NotMatcher :: struct($T: Type) {
@@ -144,27 +179,4 @@ not :: (matcher: $T) -> NotMatcher(T) {
 
 matches :: (value: $V, not_matcher: NotMatcher($T)) -> bool {
   return !matches(value, not_matcher.matcher);
-}
-
-ToAssert :: struct {}
-
-to_assert :: () -> ToAssert {
-  return ToAssert.{};
-}
-
-expected_assertion_failed :: (loc: Source_Code_Location, message: string) {
-  context.did_assert_during_expect = true;
-}
-
-expect :: (body: Code, matcher: ToAssert, loc := #caller_location) #expand {
-  new_context := context;
-  new_context.assertion_failed = expected_assertion_failed;
-  push_context new_context {
-    #insert_internal body;
-  }
-
-  if new_context.did_assert_during_expect return;
-
-  ANY_FAILURES = true;
-  print("% failed.\n  Expected it to assert, got none.\n%\n", `description, loc);
 }

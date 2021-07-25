@@ -3,6 +3,8 @@
 SPEC_FILE_SUFFIX :: ".spec.jai";
 
 specs_run :: (workspace_under_test: Workspace) {
+  start_time := get_time();
+
   specs_workspace_name := sprint("%_specs", get_name(workspace_under_test));
 
   specs_workspace := compiler_create_workspace(specs_workspace_name);
@@ -54,4 +56,8 @@ specs_run :: (workspace_under_test: Workspace) {
     }
   }
   compiler_end_intercept(specs_workspace);
+
+  end_time := get_time();
+  elapsed_time := end_time - start_time;
+  print("Tests run in % seconds\n", elapsed_time);
 };
