@@ -79,6 +79,7 @@ to_equal :: (value: $T) -> ToEqual(T) {
 }
 
 ToEqual :: struct($T: Type) {
+  description :: (using to_equal: ToEqual(T)) -> string { return sprint("to equal (%)", value); };
   value: T;
 }
 
@@ -87,21 +88,27 @@ to_be_present :: () -> ToBePresent {
 }
 
 TO_BE_PRESENT_SINGLETON: ToBePresent;
-ToBePresent :: struct {}
+ToBePresent :: struct {
+  description :: (_: ToBePresent) -> string { return "to be present"; };
+}
 
 to_be_empty :: () -> ToBeEmpty {
   return TO_BE_EMPTY_SINGLETON;
 }
 
 TO_BE_NULL_SINGLETON: ToBeNull;
-ToBeNull :: struct {}
+ToBeNull :: struct {
+  description :: (_: ToBeNull) -> string { return "to be null"; };
+}
 
 to_be_null :: () -> ToBeNull {
   return TO_BE_NULL_SINGLETON;
 }
 
 TO_BE_EMPTY_SINGLETON: ToBeEmpty;
-ToBeEmpty :: struct {}
+ToBeEmpty :: struct {
+  description :: (_: ToBeEmpty) -> string { return "to be empty"; };
+}
 
 to_contain_exactly :: (values: ..$T) -> ToContainExactly(T) {
   matcher: ToContainExactly(T);
@@ -110,6 +117,7 @@ to_contain_exactly :: (values: ..$T) -> ToContainExactly(T) {
 }
 
 ToContainExactly :: struct($T: Type) {
+  description :: (using to_contain_exactly: ToContainExactly(T)) -> string { return sprint("to contain exactly (%)", values); };
   values: []T;
 }
 
@@ -120,6 +128,7 @@ to_begin_with :: (prefix: string) -> ToBeginWith {
 }
 
 ToBeginWith :: struct {
+  description :: (using to_begin_with: ToBeginWith) -> string { return sprint("to begin with (%)", prefix); };
   prefix: string;
 }
 
@@ -127,7 +136,13 @@ expect :: (value: $Value, matcher: $MatcherType, loc := #caller_location) #expan
   if matches(value, matcher) return;
 
   ANY_FAILURES = true;
-  print("Failed expectation: %\n  Expected it % %, got: %\n%\n\n", `description, MatcherType, matcher, value, loc);
+  print(
+    "Failed expectation: %\n  Expected (%) %\n%\n\n",
+    `description,
+    value,
+    MatcherType.description(matcher),
+    loc
+  );
 
   `return;
 }
@@ -137,12 +152,22 @@ matches :: (value: $Value, matcher: ToEqual(Value)) -> bool {
 }
 
 matches :: (values: []$Value, matcher: ToContainExactly(Value)) -> bool {
+  if values.count != matcher.values.count return false;
+
+  visited_values: [..]*Value;
+  defer array_reset(*visited_values);
+
   for expected_value: matcher.values {
-    matched := false;
-    for actual_value: values {
-      matched ||= (expected_value == actual_value);
+    matched: *Value;
+    for * actual_value: values {
+      already_visited := false;
+      for visited_value: visited_values {
+        already_visited ||= (visited_value == actual_value);
+      }
+      if expected_value == <<actual_value && !already_visited matched = actual_value;
     }
     if !matched return false;
+    array_add(*visited_values, matched);
   }
   return true;
 }
@@ -168,6 +193,7 @@ specs_verify :: () {
 }
 
 NotMatcher :: struct($T: Type) {
+  description :: (using not_matcher: NotMatcher(T)) -> string { return sprint("not %", T.description(matcher)); };
   matcher: T;
 }
 
