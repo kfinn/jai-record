@@ -32,7 +32,14 @@ scgi_server_run :: (handle: (connection_fd: s32) -> () = default_handle) {
   print("scgi_server awaiting connections\n");
   while true {
     connection_fd := accept(fd);
-    handle(connection_fd);
+    pool: Pool;
+    set_allocators(*pool);
+    {
+      push_allocator(pool_allocator, *pool);
+      auto_release_temp();
+      handle(connection_fd);
+    }
+    reset(*pool);
   }
 }
 
@@ -82,6 +89,7 @@ default_handle :: (connection_fd: s32) {
 next_netstring :: (connection_fd: s32) -> []u8, success: bool {
   next_byte: u8;
   netstring_length_bytes_read := read(connection_fd, *next_byte, size_of(u8));
+
   netstring_length_bytes: [..]u8;
   defer array_reset(*netstring_length_bytes);
 

@@ -1,8 +1,15 @@
 #import "File_Utilities";
+#import "Pool";
 
 SPEC_FILE_SUFFIX :: ".spec.jai";
 
 specs_run :: (workspace_under_test: Workspace) {
+  pool: Pool;
+  set_allocators(*pool);
+  defer reset(*pool);
+  push_allocator(pool_allocator, *pool);
+  auto_release_temp();
+
   start_time := get_time();
 
   specs_workspace_name := sprint("%_specs", get_name(workspace_under_test));
@@ -56,6 +63,7 @@ specs_run :: (workspace_under_test: Workspace) {
     }
   }
   compiler_end_intercept(specs_workspace);
+  compiler_destroy_workspace(specs_workspace);
 
   end_time := get_time();
   elapsed_time := end_time - start_time;
