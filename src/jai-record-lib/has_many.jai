@@ -27,6 +27,10 @@ fetch_has_many :: (
   $has_many: Type,
   source_records: []has_many.Source
 ) -> has_many.Fetched {
+  if !source_records {
+    return has_many.destination_repo.Record.[];
+  }
+
   source_ids: [..]has_many.source_repo.IdType;
   for * source_records {
     array_add(*source_ids, it.id);

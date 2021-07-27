@@ -27,12 +27,21 @@ fetch_belongs_to :: (
   $belongs_to: Type,
   source_records: []belongs_to.Source
 ) -> belongs_to.Fetched {
+  if !source_records {
+    return belongs_to.destination_repo.Record.[];
+  }
+
   destination_ids: [..]belongs_to.destination_repo.IdType;
   for * source_records {
     #insert #run sprint(
-      "array_add(*destination_ids, it.%);\n",
+      "if it.% array_add(*destination_ids, it.%);\n",
+      belongs_to.foreign_key,
       belongs_to.foreign_key
     );
+  }
+
+  if !destination_ids {
+    return belongs_to.destination_repo.Record.[];
   }
 
   id_in: SqlWhere("id IN (:ids)", struct { ids: []belongs_to.destination_repo.IdType; });

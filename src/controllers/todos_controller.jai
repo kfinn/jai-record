@@ -25,21 +25,22 @@ TodosController :: struct {
       return;
     }
 
-    response_builder: String_Builder;
-    defer free_buffers(*response_builder);
+    todos_to_preload: [1]Todo;
+    todos_to_preload[0] = <<todo;
 
-    print_to_builder(*response_builder, "todo:\n");
-    print_to_builder(*response_builder, "%\n", todo.description);
-    if todo.completed_at {
-      print_to_builder(*response_builder, "completed: %\n", <<todo.completed_at);
-    } else {
-      print_to_builder(*response_builder, "not completed\n");
-    }
+    preloaded_todos := preload(
+      #run nested_preloader(
+        TodoHasManyTaggings,
+        TaggingBelongsToTag
+      ),
+      todos_to_preload
+    );
 
-    response_body := builder_to_string(*response_builder);
-    response := sprint("Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
-    bytes_written := write(request.connection_fd, response);
-    assert(bytes_written == response.count);
+    preloaded_todo := preloaded_todos[0];
+
+    write(request.connection_fd, "Status: 200 OK\r\nContent-Type: application/json\r\n\r\n");
+
+    todos_show_json_view(request.connection_fd, preloaded_todo);
   }
 
   PatchParams :: struct {
@@ -52,6 +53,7 @@ TodosController :: struct {
         completed_at: string;
       }
     }
+
     json_parse_success, params, params_meta := parse_json_params(Params, request.body);
     if !json_parse_success {
       response := sprint("Status: 422 Unprocessable Entity\r\nContent-Type: text/plan\r\n\r\nUnprocessable Entity");
