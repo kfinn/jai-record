@@ -33,9 +33,9 @@
 
 #load "postgres/module.jai";
 
-#load "scgi/http_server.jai";
-#load "scgi/draw_routes.jai";
-#load "scgi/render.jai";
+#load "web/http_server.jai";
+#load "web/draw_routes.jai";
+#load "web/render.jai";
 
 #load "controllers/todos_controller.jai";
 #load "controllers/users_controller.jai";
