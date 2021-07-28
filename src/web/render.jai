@@ -60,6 +60,18 @@ encode_json_value :: (value: string) -> string {
   return sprint("\"%\"", json_escape(value));
 }
 
-encode_json_value :: (value: $T) -> string {
+encode_json_value :: (value: *$T) -> string {
+  if value == null {
+    return "null";
+  } else {
+    return encode_json_value(<<value);
+  }
+}
+
+encode_json_value :: (value: $T) -> string #modify {
+  if T.type == .POINTER {
+    T = null;
+  }
+} {
   return sprint("%", value);
 }

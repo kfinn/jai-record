@@ -47,4 +47,60 @@
 {"to_render":{"children":[{"id":12,"value":"\"poo\"\\","deeper_child":{"id":17}},{"id":23,"value":"second","deeper_child":{"id":674}}]}}
     JSON, "\n", "")));
   });
+
+  it("renders nullable types", #code{
+    RenderedValue :: struct {
+      string_value: *string;
+      int_value: *int;
+    }
+
+    ToRender :: struct {
+      values: []RenderedValue;
+    }
+
+    result_with_null_values: RenderedValue;
+
+    present_string_value := "hello";
+    present_int_value := 574;
+    result_with_present_values: RenderedValue;
+    result_with_present_values.string_value = *present_string_value;
+    result_with_present_values.int_value = *present_int_value;
+
+    values: [..]RenderedValue;
+    array_add(*values, result_with_null_values);
+    array_add(*values, result_with_present_values);
+
+    to_render: ToRender;
+    to_render.values = values;
+
+    pipefds: [2]s32;
+    expect(pipe(*pipefds), to_equal(cast(s32)0));
+
+    read_end := pipefds[0];
+    write_end := pipefds[1];
+
+    render_json(write_end, to_render, #code{
+      to_render := it;
+      json_array("values", to_render.values, #code{
+        value := it;
+        json_fields(value, "string_value", "int_value");
+      });
+    });
+    close(write_end);
+
+    next_byte: u8;
+    result_bytes: [..]u8;
+    while read(read_end, *next_byte, size_of(u8)) {
+      array_add(*result_bytes, next_byte);
+    }
+    close(read_end);
+
+    result: string;
+    result.count = result_bytes.count;
+    result.data = result_bytes.data;
+
+    expect(result, to_equal(replace(#string JSON
+{"values":[{"string_value":null,"int_value":null},{"string_value":"hello","int_value":574}]}
+    JSON, "\n", "")));
+  });
 });
