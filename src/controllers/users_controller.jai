@@ -1,5 +1,5 @@
 UsersController :: struct {
-  index :: (request: ScgiRequest) {
+  index :: (request: HttpRequest) {
     response_builder: String_Builder;
     defer free_buffers(*response_builder);
 
@@ -17,12 +17,12 @@ UsersController :: struct {
     }
 
     response_body := builder_to_string(*response_builder);
-    response := sprint("Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
+    response := sprint("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
     bytes_written := write(request.connection_fd, response);
     assert(bytes_written == response.count);
   }
 
-  show :: (request: ScgiRequest, user_id: string) {
+  show :: (request: HttpRequest, user_id: string) {
     user := UsersRepo.find(user_id);
 
     response_builder: String_Builder;
@@ -37,7 +37,7 @@ UsersController :: struct {
     }
 
     response_body := builder_to_string(*response_builder);
-    response := sprint("Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
+    response := sprint("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
     bytes_written := write(request.connection_fd, response);
     assert(bytes_written == response.count);
   }

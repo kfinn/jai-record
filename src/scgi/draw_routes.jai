@@ -48,7 +48,7 @@ draw_routes :: ($block: Code) -> string {
       print_to_builder(*`routes_builder, "    index_pattern, compile_pattern_success := compile(\"%/?$\");\n", route_pattern_prefix);
       print_to_builder(*`routes_builder, "    assert(compile_pattern_success, \"failed to compile route pattern\");\n");
       print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, index_pattern);\n");
-      print_to_builder(*`routes_builder, "    if matched && request_method == REQUEST_METHOD_GET {\n");
+      print_to_builder(*`routes_builder, "    if matched && request_method == .GET {\n");
       print_to_builder(*`routes_builder, "      %.index(request", controller_type_info.name);
       for id_param_index: 1..id_params_count {
         print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
@@ -68,7 +68,7 @@ draw_routes :: ($block: Code) -> string {
       print_to_builder(*`routes_builder, "    show_pattern, compile_pattern_success := compile(\"%/?$\");\n", show_route_pattern);
       print_to_builder(*`routes_builder, "    assert(compile_pattern_success, \"failed to compile route pattern\");\n");
       print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, show_pattern);\n");
-      print_to_builder(*`routes_builder, "    if matched && request_method == REQUEST_METHOD_GET {\n");
+      print_to_builder(*`routes_builder, "    if matched && request_method == .GET {\n");
       print_to_builder(*`routes_builder, "      %.show(request", controller_type_info.name);
       for id_param_index: 1..show_id_params_count {
         print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
@@ -88,7 +88,7 @@ draw_routes :: ($block: Code) -> string {
       print_to_builder(*`routes_builder, "    patch_pattern, compile_pattern_success := compile(\"%/?$\");\n", patch_route_pattern);
       print_to_builder(*`routes_builder, "    assert(compile_pattern_success, \"failed to compile route pattern\");\n");
       print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, patch_pattern);\n");
-      print_to_builder(*`routes_builder, "    if matched && request_method == REQUEST_METHOD_PATCH {\n");
+      print_to_builder(*`routes_builder, "    if matched && request_method == .PATCH {\n");
       print_to_builder(*`routes_builder, "      %.update(request", controller_type_info.name);
       for id_param_index: 1..show_id_params_count {
         print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
@@ -110,11 +110,9 @@ draw_routes :: ($block: Code) -> string {
     }
   }
 
-  print_to_builder(*routes_builder, "handle_request_with_resources :: (request: ScgiRequest) -> bool {\n");
-  print_to_builder(*routes_builder, "  request_uri, request_uri_present := table_find(request.headers, REQUEST_URI_HEADER_KEY);\n");
-  print_to_builder(*routes_builder, "  assert(request_uri_present, \"invalid request, missing request uri\");\n");
-  print_to_builder(*routes_builder, "  request_method, request_method_present := table_find(request.headers, REQUEST_METHOD_HEADER_KEY);\n");
-  print_to_builder(*routes_builder, "  assert(request_method_present, \"invalid request, missing request method\");\n");
+  print_to_builder(*routes_builder, "handle_request_with_resources :: (request: HttpRequest) -> bool {\n");
+  print_to_builder(*routes_builder, "  request_uri := request.path;\n");
+  print_to_builder(*routes_builder, "  request_method := request.method;\n");
   #insert_internal block;
   print_to_builder(*routes_builder, "  return false;\n");
   print_to_builder(*routes_builder, "}\n");

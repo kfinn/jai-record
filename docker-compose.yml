@@ -5,17 +5,11 @@ services:
       - $JAI_HOME:/jai:ro
       - .:/workspace:rw
     working_dir: /workspace
-    command: bash ./server.sh
-    expose:
-      - "7000"
+    ports:
+      - "7000:7000"
     restart: on-failure
+    tty: true
   db:
     image: postgres
     environment:
       POSTGRES_PASSWORD: password
-  nginx:
-    image: nginx
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    ports:
-      - "7000:80"

@@ -1,5 +1,5 @@
 TodosController :: struct {
-  index :: (request: ScgiRequest) {
+  index :: (request: HttpRequest) {
     response_builder: String_Builder;
     defer free_buffers(*response_builder);
 
@@ -11,15 +11,15 @@ TodosController :: struct {
     }
 
     response_body := builder_to_string(*response_builder);
-    response := sprint("Status: 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
+    response := sprint("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
     bytes_written := write(request.connection_fd, response);
     assert(bytes_written == response.count);
   }
 
-  show :: (request: ScgiRequest, todo_id: string) {
+  show :: (request: HttpRequest, todo_id: string) {
     todo := TodosRepo.find(todo_id);
     if (!todo) {
-      response := sprint("Status: 404 Not Found\r\nContent-Type: text/plan\r\n\r\nNot Found");
+      response := sprint("HTTP/1.1 404 Not Found\r\nContent-Type: text/plan\r\n\r\nNot Found");
       bytes_written := write(request.connection_fd, response);
       assert(bytes_written == response.count);
       return;
@@ -38,7 +38,7 @@ TodosController :: struct {
 
     preloaded_todo := preloaded_todos[0];
 
-    write(request.connection_fd, "Status: 200 OK\r\nContent-Type: application/json\r\n\r\n");
+    write(request.connection_fd, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
 
     todos_show_json_view(request.connection_fd, preloaded_todo);
   }
@@ -47,7 +47,7 @@ TodosController :: struct {
     completed_at: string;
   }
 
-  update :: (request: ScgiRequest, todo_id: string) {
+  update :: (request: HttpRequest, todo_id: string) {
     Params :: struct {
       todo: struct {
         completed_at: string;
@@ -56,7 +56,7 @@ TodosController :: struct {
 
     json_parse_success, params, params_meta := parse_json_params(Params, request.body);
     if !json_parse_success {
-      response := sprint("Status: 422 Unprocessable Entity\r\nContent-Type: text/plan\r\n\r\nUnprocessable Entity");
+      response := sprint("HTTP/1.1 422 Unprocessable Entity\r\nContent-Type: text/plan\r\n\r\nUnprocessable Entity");
       bytes_written := write(request.connection_fd, response);
       assert(bytes_written == response.count);
       return;
@@ -64,7 +64,7 @@ TodosController :: struct {
 
     todo := TodosRepo.find(todo_id);
     if (!todo) {
-      response := sprint("Status: 404 Not Found\r\nContent-Type: text/plan\r\n\r\nNot Found");
+      response := sprint("HTTP/1.1 404 Not Found\r\nContent-Type: text/plan\r\n\r\nNot Found");
       bytes_written := write(request.connection_fd, response);
       assert(bytes_written == response.count);
       return;
@@ -79,11 +79,11 @@ TodosController :: struct {
     }
 
     if TodosRepo.save(todo) {
-      response :: "Status: 200 OK\r\n\r\n";
+      response :: "HTTP/1.1 200 OK\r\n\r\n";
       bytes_written := write(request.connection_fd, response);
       assert(bytes_written == response.count);
     } else {
-      response :: "Status: 422 Unprocessable Entity\r\n\r\n";
+      response :: "HTTP/1.1 422 Unprocessable Entity\r\n\r\n";
       bytes_written := write(request.connection_fd, response);
       assert(bytes_written == response.count);
     }

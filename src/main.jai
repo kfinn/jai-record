@@ -33,7 +33,7 @@
 
 #load "postgres/module.jai";
 
-#load "scgi/scgi_server.jai";
+#load "scgi/http_server.jai";
 #load "scgi/draw_routes.jai";
 #load "scgi/render.jai";
 
@@ -48,7 +48,7 @@
 #load "type_infos.jai";
 
 main :: () {
-  scgi_server_run();
+  http_server_run();
 }
 
 jai_record_demo :: () {
