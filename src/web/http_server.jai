@@ -44,42 +44,60 @@ http_server_run :: (handle: (connection_fd: s32) -> () = default_handle) {
 }
 
 default_handle :: (connection_fd: s32) {
-  first_line := read_http_line(connection_fd);
+  error_response := "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nInternal Server Error";
+  error := false;
+
+  defer {
+    if error {
+      print("ERROR: %\n", error_response);
+      write(connection_fd, error_response);
+    }
+    close(connection_fd);
+  }
+
+  validate :: (condition: bool, $message: string = "Internal Server Error", print_args: ..Any) #expand {
+    if !condition {
+      error = true;
+      formatted_message := sprint(message, ..print_args);
+      error_response = sprint("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\n%", formatted_message);
+      `return;
+    }
+  };
+
+  first_line, read_first_line_success := read_http_line(connection_fd);
+  validate(read_first_line_success);
   first_line_components := split(first_line, " ");
 
-  assert(first_line_components.count == 3);
+  validate(first_line_components.count == 3);
   method_string := first_line_components[0];
   method, parse_http_method_success := parse_http_method(method_string);
-  assert(parse_http_method_success, "Invalid HTTP method: %", method_string);
+  validate(parse_http_method_success, "Invalid HTTP method: %", method_string);
 
   path := first_line_components[1];
 
   http_version := first_line_components[2];
-  assert(http_version == "HTTP/1.1", "Invalid HTTP version: %", http_version);
+  validate(http_version == "HTTP/1.1", "Invalid HTTP version: %", http_version);
 
   headers, parse_http_headers_success := parse_http_headers(connection_fd);
-  assert(parse_http_headers_success, "Invalid HTTP headers");
+  validate(parse_http_headers_success, "Invalid HTTP headers");
 
   content_length_header: *HttpHeader;
   for * headers {
     if it.key == HTTP_CONTENT_LENGTH_HEADER_KEY {
-      assert(!content_length_header, "Multiple % headers detected on same request", HTTP_CONTENT_LENGTH_HEADER_KEY);
+      validate(!content_length_header, "Multiple % headers detected on same request", HTTP_CONTENT_LENGTH_HEADER_KEY);
       content_length_header = it;
     }
   }
   content_length := 0;
   body := "";
   if content_length_header {
-    print("reading http body\n");
     content_length, parse_content_length_success := parse_int(*content_length_header.value);
-    assert(parse_content_length_success, "Invalid % header: %", HTTP_CONTENT_LENGTH_HEADER_KEY, content_length_header.value);
-    print("length: %\n", content_length);
+    validate(parse_content_length_success, "Invalid % header: %", HTTP_CONTENT_LENGTH_HEADER_KEY, content_length_header.value);
 
 
     read_http_body_success: bool;
     body, read_http_body_success = read_http_body(connection_fd, content_length);
-    assert(read_http_body_success, "unable to parse HTTP body");
-    print("body: % (length: %)\n", body, body.count);
+    validate(read_http_body_success, "unable to parse HTTP body");
   }
 
   request: HttpRequest;
@@ -91,18 +109,14 @@ default_handle :: (connection_fd: s32) {
   
   print("% % %\n", request.method, request.path, request.body);
 
-  handled := handle_request_with_resources(request);
-
-  if !handled {
-    response := "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found";
-    bytes_written := write(connection_fd, response);
-    assert(bytes_written == response.count);
+  if handle_request_with_resources(request) {
+    error = false;
+  } else {
+    error_response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found";
   }
-
-  close(connection_fd);
 }
 
-read_http_line :: (connection_fd: s32) -> string {
+read_http_line :: (connection_fd: s32) -> string, success: bool {
   bytes: [..]u8;
 
   next_byte: u8;
@@ -118,16 +132,16 @@ read_http_line :: (connection_fd: s32) -> string {
 
     bytes_read := read(connection_fd, *next_byte, size_of(u8));
   }
-  assert(bytes_read == size_of(u8), "failed reading line");
+  if bytes_read != size_of(u8) return "", false;
 
   if bytes.count == 2 {
-    return "";
+    return "", true;
   }
 
   result: string;
   result.count = bytes.count - 2;
   result.data = bytes.data;
-  return result;
+  return result, true;
 }
 
 parse_http_method :: (method_string: string) -> HttpMethod, success: bool {
@@ -202,7 +216,7 @@ read_http_body :: (connection_fd: s32, content_length: int) -> string, success: 
   bytes_read := 0;
   while bytes_read < content_length {
     bytes_remaining := content_length - bytes_read;
-    assert(bytes_remaining > 0);
+    if bytes_remaining <= 0 return "", false;
 
     to_read := size_of(u8) * cast(u64)bytes_remaining;
     bytes_read += read(connection_fd, http_body_bytes.data + bytes_read, to_read);
