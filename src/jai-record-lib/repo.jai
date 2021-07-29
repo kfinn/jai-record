@@ -1,16 +1,31 @@
-_CONNECTION : *PGconn;
+#add_context jai_record_pg_connection: *PGconn;
 
 jai_record_pg_connection :: () -> *PGconn, success: bool {
-  if _CONNECTION != null return _CONNECTION, true;
+  if context.jai_record_pg_connection != null return context.jai_record_pg_connection, true;
 
   connection, success := connect("postgres://postgres:password@db:5432/postgres");
 
   if success {
-    _CONNECTION = connection;
-    return _CONNECTION, true;
+    context.jai_record_pg_connection = connection;
+    return context.jai_record_pg_connection, true;
   } else {
     return null, false;
   }
+}
+
+push_jai_record_pg_connection_context :: () #expand {
+  previous_jai_record_pg_connection := context.jai_record_pg_connection;
+  context.jai_record_pg_connection = null;
+  `defer {
+      if context.jai_record_pg_connection {
+        close_jai_record_pg_connection(context.jai_record_pg_connection);
+      }
+      context.jai_record_pg_connection = previous_jai_record_pg_connection;
+  }
+}
+
+close_jai_record_pg_connection :: (connection: *PGconn) {
+  PQfinish(connection);
 }
 
 EmptyMutableRecord :: struct {};

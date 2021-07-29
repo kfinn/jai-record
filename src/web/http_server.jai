@@ -16,7 +16,11 @@ HttpRequest :: struct {
   connection_fd: s32;
 }
 
-http_server_run :: (handle: (connection_fd: s32) -> () = default_handle) {
+HttpServerWork :: struct {
+  connection_fd: s32;
+}
+
+http_server_run :: () {
   fd := socket(AF_INET, SOCK_STREAM, 0);
   defer close(fd);
 
@@ -29,21 +33,38 @@ http_server_run :: (handle: (connection_fd: s32) -> () = default_handle) {
   listen_status := listen(fd, 40);
   assert(listen_status == 0, "Unable to listen to socket. Status: %", listen_status);
 
+  thread_group: Thread_Group;
+  thread_group.logging = false;
+  init(*thread_group, 5, http_server_work);
+  start(*thread_group);
+
   print("http_server awaiting connections\n");
   while true {
-    connection_fd := accept(fd);
-    pool: Pool;
-    set_allocators(*pool);
-    {
-      push_allocator(pool_allocator, *pool);
-      auto_release_temp();
-      handle(connection_fd);
-    }
-    reset(*pool);
+    work := New(HttpServerWork);
+    work.connection_fd = accept(fd);
+    add_work(*thread_group, work);
+    for get_completed_work(*thread_group) free(cast(*HttpServerWork)it);
   }
 }
 
-default_handle :: (connection_fd: s32) {
+http_server_work :: (group: *Thread_Group, thread: *Thread, work: *void) -> Thread_Continue_Status {
+  connection_fd := (cast(*HttpServerWork)work).connection_fd;
+
+  pool: Pool;
+  set_allocators(*pool);
+  defer release(*pool);
+
+  {
+    push_jai_record_pg_connection_context();
+    push_allocator(pool_allocator, *pool);
+    auto_release_temp();
+
+    handle_http_connection(connection_fd);
+  }
+  return .CONTINUE;
+}
+
+handle_http_connection :: (connection_fd: s32) {
   error_response := "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nInternal Server Error";
   error := false;
 
