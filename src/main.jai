@@ -5,6 +5,7 @@
 #import "POSIX";
 #import "String";
 #import "Thread";
+#import "Base64_Encode";
 
 #import "jai-socket";
 #import "uniform";
