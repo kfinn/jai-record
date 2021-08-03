@@ -36,6 +36,7 @@
 #load "postgres/module.jai";
 
 #load "web/http_server.jai";
+#load "web/websocket_server.jai";
 #load "web/draw_routes.jai";
 #load "web/render.jai";
 
@@ -45,6 +46,7 @@
 
 #load "views/todos/show.jai";
 
+#load "mutexes.jai";
 #load "notes.jai";
 #load "routes.jai";
 #load "type_infos.jai";
