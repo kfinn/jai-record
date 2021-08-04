@@ -67,19 +67,154 @@ add_connection :: (using websocket_server: *WebsocketServer, request: HttpReques
 websocket_connection_proc :: (thread: *Thread) -> s64 {
   websocket_connection := cast(*WebsocketConnection)thread.data;
 
-  print("handling websocket\n");
-
-  next_byte: u8;
-  bytes_read := read(websocket_connection.http_request.connection_fd, *next_byte, size_of(u8));
-  while bytes_read == size_of(u8) {
-    current_byte_string: string;
-    current_byte_string.count = 1;
-    current_byte_string.data = *next_byte;
-    print("%", current_byte_string);
-    bytes_read := read(websocket_connection.http_request.connection_fd, *next_byte, size_of(u8));
+  while true {
+    message := read_websocket_message(websocket_connection.http_request.connection_fd);
+    print("message.kind: %\n", message.kind);
+    if message.kind == .TEXT {
+      print("message payload: %\n", cast(string)message.payload);
+    }
   }
-  
-  print("closed websocket\n");
 
   return 0;
+}
+
+WebsocketMessage :: struct {
+  Kind :: enum {
+    TEXT;
+    BINARY;
+    CLOSE;
+    PING;
+    PONG;
+  }
+  kind: Kind;
+  payload: []u8;
+}
+
+read_websocket_message :: (connection_fd: s32) -> WebsocketMessage {
+  next_websocket_frame: WebsocketFrame;
+  next_websocket_frame = read_websocket_frame(connection_fd);
+
+  websocket_message: WebsocketMessage;
+  websocket_message.kind = parse_websocket_message_kind_from_first_frame(next_websocket_frame);
+
+  payload_builder: [..]u8;
+  for next_websocket_frame.payload {
+    array_add(*payload_builder, it);
+  }
+
+  while !next_websocket_frame.fin {
+    next_websocket_frame = read_websocket_frame(connection_fd);
+    assert(next_websocket_frame.opcode == .CONTINUATION, "encountered subsequent frame in message with non-continuation opcode");
+
+    for next_websocket_frame.payload {
+      array_add(*payload_builder, it);
+    }
+  }
+
+  websocket_message.payload = payload_builder;
+  return websocket_message;
+}
+
+parse_websocket_message_kind_from_first_frame :: (first_websocket_frame: WebsocketFrame) -> WebsocketMessage.Kind {
+  if #complete first_websocket_frame.opcode == {
+    case .CONTINUATION; assert(false, "encountered first frame in message with continuation opcode"); return 0;
+    case .TEXT; return .TEXT;
+    case .BINARY; return .BINARY;
+    case .CLOSE; return .CLOSE;
+    case .PING; return .PING;
+    case .PONG; return .PONG;
+  }
+}
+
+WebsocketFrame :: struct {
+  Opcode :: enum {
+    CONTINUATION :: 0x0;
+    TEXT :: 0x1;
+    BINARY :: 0x2;
+    CLOSE :: 0x8;
+    PING :: 0x9;
+    PONG :: 0xA;
+  }
+
+  fin: bool;
+  opcode: Opcode;
+  payload: []u8;
+}
+
+read_websocket_frame :: (connection_fd: s32) -> WebsocketFrame {
+  websocket_frame: WebsocketFrame;
+
+  bytes_read: ssize_t;
+  next_byte: u8;
+  bytes_read = read(connection_fd, *next_byte, size_of(u8));
+  assert(bytes_read == size_of(u8), "failed to read first byte of frame");
+  
+  websocket_frame.fin = parse_fin_from_frame_first_byte(next_byte);
+  websocket_frame.opcode = parse_opcode_from_frame_first_byte(next_byte);
+
+  bytes_read = read(connection_fd, *next_byte, size_of(u8));
+  assert(bytes_read == size_of(u8), "failed to read second byte of frame");
+
+  is_masked := parse_is_masked_from_frame_second_byte(next_byte);
+  assert(is_masked, "received unmasked data");
+
+  maybe_length := parse_maybe_length_from_frame_second_byte(next_byte);
+
+  length: s64;
+  if maybe_length == 126 {
+    medium_length: u16;
+    bytes_read = read(connection_fd, *medium_length, size_of(u16));
+    assert(bytes_read == size_of(u16), "failed to read content length of frame (medium length)");
+    length = ntoh(medium_length);
+  } else if maybe_length == 127 {
+    bytes_read = read(connection_fd, *length, size_of(s64));
+    assert(bytes_read == size_of(s64), "failed to read content length of frame");
+    length = ntoh(length);
+  } else {
+    length = maybe_length;
+  }
+
+  mask: [4]u8;
+  bytes_read = read(connection_fd, *mask, size_of(u8) * 4);
+  assert(bytes_read == size_of(u8) * 4, "failed to read frame mask");
+
+  websocket_frame.payload = NewArray(length, u8);
+  total_payload_bytes_read := 0;
+  while total_payload_bytes_read < length {
+    total_payload_bytes_read += read(
+      connection_fd,
+      websocket_frame.payload.data + total_payload_bytes_read,
+      xx (size_of(u8) * (length - total_payload_bytes_read))
+    );
+  }
+  for * websocket_frame.payload {
+    <<it = <<it ^ mask[it_index % 4];
+  }
+  return websocket_frame;
+}
+
+parse_fin_from_frame_first_byte :: (first_byte: u8) -> bool {
+  return (first_byte & (1 << 7)) != 0;
+}
+
+parse_opcode_from_frame_first_byte :: (first_byte: u8) -> WebsocketFrame.Opcode {
+  if first_byte & 0xF == {
+    case 0x0; return .CONTINUATION;
+    case 0x1; return .TEXT;
+    case 0x2; return .BINARY;
+    case 0x8; return .CLOSE;
+    case 0x9; return .PING;
+    case 0xA; return .PONG;
+    case;
+      assert(false, "Invalid opcode: %", first_byte & 0xF);
+      return 0;
+  }
+}
+
+parse_is_masked_from_frame_second_byte :: (second_byte: u8) -> bool {
+  return (second_byte & (1 << 7)) != 0;
+}
+
+parse_maybe_length_from_frame_second_byte :: (second_byte: u8) -> u8 {
+  return second_byte & 0x7f;
 }
