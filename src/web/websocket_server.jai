@@ -78,6 +78,11 @@ websocket_connection_proc :: (thread: *Thread) -> s64 {
         print("message payload: %\n", cast(string)message.payload);
       case .BINARY;
         print("message payload: % binary bytes\n", message.payload.count);
+      case .PING;
+        write_websocket_frame(
+          websocket_connection.http_request.connection_fd,
+          pong_frame_response_from_message(message)
+        );
       case .CLOSE;
         close_message_received = true;
         write_websocket_frame(
@@ -304,4 +309,12 @@ close_frame_response_from_message :: (message: WebsocketMessage) -> WebsocketFra
   }
 
   return close_frame;
+}
+
+pong_frame_response_from_message :: (message: WebsocketMessage) -> WebsocketFrame {
+  pong_frame: WebsocketFrame;
+  pong_frame.fin = true;
+  pong_frame.opcode = .PONG;
+  pong_frame.payload = message.payload;
+  return pong_frame;
 }
