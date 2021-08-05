@@ -1,6 +1,8 @@
 SEC_WEBSOCKET_KEY_HEADER_KEY :: "Sec-WebSocket-Key";
 SEC_WEBSOCKET_ACCEPT_MAGIC_STRING :: "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
+WEBSOCKET_MEDIUM_CONTENT_LENGTH_MAX :: 65535;
+
 
 libcrypto :: #foreign_system_library "libcrypto";
 SHA1 :: (d: *u8, n: u64, md: *u8) -> *u8 #foreign libcrypto;
@@ -67,14 +69,26 @@ add_connection :: (using websocket_server: *WebsocketServer, request: HttpReques
 websocket_connection_proc :: (thread: *Thread) -> s64 {
   websocket_connection := cast(*WebsocketConnection)thread.data;
 
-  while true {
+  close_message_received := false;
+  while !close_message_received {
     message := read_websocket_message(websocket_connection.http_request.connection_fd);
     print("message.kind: %\n", message.kind);
-    if message.kind == .TEXT {
-      print("message payload: %\n", cast(string)message.payload);
+    if message.kind == {
+      case .TEXT;
+        print("message payload: %\n", cast(string)message.payload);
+      case .BINARY;
+        print("message payload: % binary bytes\n", message.payload.count);
+      case .CLOSE;
+        close_message_received = true;
+        write_websocket_frame(
+          websocket_connection.http_request.connection_fd,
+          close_frame_response_from_message(message)
+        );
+        close(websocket_connection.http_request.connection_fd);
     }
   }
 
+  print("disconnected: %\n", websocket_connection.http_request.connection_fd);
   return 0;
 }
 
@@ -217,4 +231,77 @@ parse_is_masked_from_frame_second_byte :: (second_byte: u8) -> bool {
 
 parse_maybe_length_from_frame_second_byte :: (second_byte: u8) -> u8 {
   return second_byte & 0x7f;
+}
+
+write_websocket_frame :: (connection_fd: s32, websocket_frame: WebsocketFrame) {
+  bytes_written: ssize_t;
+  first_byte := websocket_frame_first_byte(websocket_frame);
+  bytes_written = write(connection_fd, *first_byte, size_of(u8));
+  assert(bytes_written == size_of(u8), "failed to write first byte of frame");
+  
+  is_masked_and_content_length_bytes := websocket_frame_is_masked_and_content_length_bytes(websocket_frame);
+  bytes_written = write(connection_fd, is_masked_and_content_length_bytes.data, xx (size_of(u8) * is_masked_and_content_length_bytes.count));
+  assert(bytes_written == size_of(u8) * is_masked_and_content_length_bytes.count, "failed to write frame is masked and content length");
+
+  total_payload_bytes_written := 0;
+  while total_payload_bytes_written < websocket_frame.payload.count {
+    total_payload_bytes_written += write(
+      connection_fd,
+      websocket_frame.payload.data + total_payload_bytes_written,
+      xx (size_of(u8) * (websocket_frame.payload.count - total_payload_bytes_written))
+    );
+  }
+}
+
+websocket_frame_first_byte :: (using websocket_frame: WebsocketFrame) -> u8 {
+  result: u8;
+  if fin {
+    result |= 1 << 7;
+  }
+  if #complete websocket_frame.opcode == {
+    case .CONTINUATION; result |= 0x0;
+    case .TEXT; result |= 0x1;
+    case .BINARY; result |= 0x2;
+    case .CLOSE; result |= 0x8;
+    case .PING; result |= 0x9;
+    case .PONG; result |= 0xA;
+  }
+  return result;
+}
+
+websocket_frame_is_masked_and_content_length_bytes :: (using websocket_frame: WebsocketFrame) -> []u8 {
+  result: [..]u8;
+
+  if payload.count > WEBSOCKET_MEDIUM_CONTENT_LENGTH_MAX {
+    array_add(*result, 127);
+    network_encoded_u64_length := ntoh(payload.count);
+    network_encoded_u64_length_bytes: [..]u8;
+    network_encoded_u64_length_bytes.count = size_of(u64) / size_of(u8);
+    network_encoded_u64_length_bytes.data = xx *network_encoded_u64_length;
+    array_add(*result, ..network_encoded_u64_length_bytes);
+  } else if payload.count >= 126 {
+    array_add(*result, 126);
+    network_encoded_u16_length := ntoh(cast(u16)payload.count);
+    network_encoded_u16_length_bytes: [..]u8;
+    network_encoded_u16_length_bytes.count = size_of(u16) / size_of(u8);
+    network_encoded_u16_length_bytes.data = xx *network_encoded_u16_length;
+    array_add(*result, ..network_encoded_u16_length_bytes);
+  } else {
+    array_add(*result, xx payload.count);
+  }
+
+  return result;
+}
+
+close_frame_response_from_message :: (message: WebsocketMessage) -> WebsocketFrame {
+  close_frame: WebsocketFrame;
+  close_frame.fin = true;
+  close_frame.opcode = .CLOSE;
+
+  if message.payload.count >= 2 {
+    close_frame.payload.count = 2;
+    close_frame.payload.data = message.payload.data;
+  }
+
+  return close_frame;
 }
