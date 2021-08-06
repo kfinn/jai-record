@@ -18,54 +18,136 @@ HttpRequest :: struct {
   connection_fd: s32;
 }
 
+HttpServerWorkBase :: struct {
+  Kind :: enum {
+    HTTP_CONNECTION;
+    WEBSOCKET_MESSAGE;
+  }
+  kind: Kind;
+}
+
 HttpConnectionWork :: struct {
+  using base: HttpServerWorkBase;
+  base.kind = .HTTP_CONNECTION;
+
   connection_fd: s32;
 }
 
-HttpServerThreadGroupData :: struct {
+WebsocketMessageWork :: struct {
+  using base: HttpServerWorkBase;
+  base.kind = .WEBSOCKET_MESSAGE;
+
+  http_request: *HttpRequest;
+  websocket_message: WebsocketMessage;
+}
+
+HttpServer :: struct {
+  mutex: Mutex;
   websocket_server: WebsocketServer;
+  thread_group: Thread_Group;
+
+  allocator: Allocator;
+  allocator_data: *void;
 }
 
 http_server_run :: () {
-  fd := socket(AF_INET, SOCK_STREAM, 0);
-  defer close(fd);
+  http_server: HttpServer;
+  init(*http_server);
+  run(*http_server);
+}
 
-  reuseaddr_value: s32 = 1;
-  setsockopt_status := setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, *reuseaddr_value, size_of(s32));
-
-  bind_status := bind(fd, HTTP_HOST, HTTP_PORT);
-  assert(bind_status == 0, "Unable to to bind socket to port. Is the socket in use? Status: %", bind_status);
-
-  listen_status := listen(fd, 40);
-  assert(listen_status == 0, "Unable to listen to socket. Status: %", listen_status);
-
-  websocket_server: WebsocketServer;
+init :: (using http_server: *HttpServer) {
+  websocket_server.http_server = http_server;
   init(*websocket_server);
 
-  thread_group: Thread_Group;
   thread_group.logging = false;
-  thread_group.data = *websocket_server;
-
+  thread_group.data = http_server;
   init(*thread_group, 5, http_server_work);
+
+  remember_allocators(http_server);
+}
+
+run :: (using http_server: *HttpServer) {
+  socket_fd := socket(AF_INET, SOCK_STREAM, 0);
+  defer close(socket_fd);
+
+  reuseaddr_value: s32 = 1;
+  setsockopt_status := setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, *reuseaddr_value, size_of(s32));
+
+  bind_status := bind(socket_fd, HTTP_HOST, HTTP_PORT);
+  assert(bind_status == 0, "Unable to to bind socket to port. Is the socket in use? Status: %", bind_status);
+
+  listen_status := listen(socket_fd, 40);
+  assert(listen_status == 0, "Unable to listen to socket. Status: %", listen_status);
+
   start(*thread_group);
 
   print("http_server awaiting connections\n");
   while true {
-    work := New(HttpConnectionWork);
-    work.connection_fd = accept(fd);
-    add_work(*thread_group, work);
-    clear_completed_work(*thread_group);
+    connection_fd := accept(socket_fd);
+    add_http_connection_work(http_server, connection_fd);
+    clear_completed_work(http_server);
   }
 }
 
-clear_completed_work :: (thread_group: *Thread_Group) {
-  for get_completed_work(thread_group) {
-    free(cast(*HttpConnectionWork)it);
+add_http_connection_work :: (http_server: *HttpServer, connection_fd: s32) {
+  push_lock(*http_server.mutex);
+  push_allocator(http_server.allocator, http_server.allocator_data);
+
+  http_connection_work := New(HttpConnectionWork);
+  http_connection_work.connection_fd = connection_fd;
+
+  add_work(
+    *http_server.thread_group,
+    http_connection_work
+  );
+}
+
+add_websocket_message_work :: (http_server: *HttpServer, http_request: *HttpRequest, websocket_message: WebsocketMessage) {
+  push_lock(*http_server.mutex);
+  push_allocator(http_server.allocator, http_server.allocator_data);
+
+  websocket_message_work := New(WebsocketMessageWork);
+  websocket_message_work.http_request = http_request;
+  websocket_message_work.websocket_message = websocket_message;
+  websocket_message_work.websocket_message.payload = array_copy(websocket_message.payload);
+
+  add_work(
+    *http_server.thread_group,
+    websocket_message_work
+  );
+}
+
+clear_completed_work :: (using http_server: *HttpServer) {
+  push_lock(*http_server.mutex);
+  push_allocator(allocator, allocator_data);
+
+  for get_completed_work(*thread_group) {
+    http_server_work_base := cast(*HttpServerWorkBase)it;
+
+    if #complete http_server_work_base.kind == {
+      case .HTTP_CONNECTION;
+        free(cast(*HttpConnectionWork)it);
+      case .WEBSOCKET_MESSAGE; 
+        websocket_message_work := cast(*WebsocketMessageWork)it;
+        array_free(websocket_message_work.websocket_message.payload);
+        free(websocket_message_work);
+    }
   }
 }
 
 http_server_work :: (group: *Thread_Group, thread: *Thread, work: *void) -> Thread_Continue_Status {
-  connection_fd := (cast(*HttpConnectionWork)work).connection_fd;
+  http_server_work_base := cast(*HttpServerWorkBase)work;
+  if #complete http_server_work_base.kind == {
+    case .HTTP_CONNECTION;
+      return perform_http_connection_work(group, thread, xx http_server_work_base);
+    case .WEBSOCKET_MESSAGE;
+      return perform_websocket_message_work(group, thread, xx http_server_work_base);
+  }
+}
+
+perform_http_connection_work :: (group: *Thread_Group, thread: *Thread, work: *HttpConnectionWork) -> Thread_Continue_Status {
+  connection_fd := work.connection_fd;
 
   pool: Pool;
   set_allocators(*pool);
@@ -80,6 +162,7 @@ http_server_work :: (group: *Thread_Group, thread: *Thread, work: *void) -> Thre
     if !success {
       write(connection_fd, error_response);
       close(connection_fd);
+      return .CONTINUE;
     }
 
     print("% % %\n", request.method, request.path, request.body);
@@ -99,6 +182,13 @@ http_server_work :: (group: *Thread_Group, thread: *Thread, work: *void) -> Thre
   return .CONTINUE;
 }
 
+perform_websocket_message_work :: (group: *Thread_Group, thread: *Thread, work: *WebsocketMessageWork) -> Thread_Continue_Status {
+  print("perform_websocket_message_work\n");
+  print("websocket_message_work payload: %\n", cast(string)(work.websocket_message.payload));
+
+  return .CONTINUE;
+}
+
 find_header :: (headers: HttpHeaders, key: string) -> *HttpHeader {
   for * headers {
     if it.key == key return it;
@@ -107,18 +197,15 @@ find_header :: (headers: HttpHeaders, key: string) -> *HttpHeader {
 }
 
 handle_websocket_upgrade_request :: (group: *Thread_Group, thread: *Thread, request: HttpRequest) {
-  http_server_thread_group_data := cast(*HttpServerThreadGroupData)group.data;
+  http_server_thread_group_data := cast(*HttpServer)group.data;
   add_connection(*http_server_thread_group_data.websocket_server, request);
 };
 
 parse_http_request :: (connection_fd: s32) -> HttpRequest, success: bool, error_response: string {
-  error_response := "";
-
   validate :: (condition: bool, $message: string = "Internal Server Error", print_args: ..Any) #expand {
     if !condition {
       formatted_message := sprint(message, ..print_args);
-      error_response = sprint("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\n%", formatted_message);
-      `return .{}, false, error_response;
+      `return .{}, false, sprint("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\n%", formatted_message);
     }
   };
 

@@ -8,8 +8,12 @@ libcrypto :: #foreign_system_library "libcrypto";
 SHA1 :: (d: *u8, n: u64, md: *u8) -> *u8 #foreign libcrypto;
 
 WebsocketServer :: struct {
+  http_server: *HttpServer;
   websocket_connections: [..]*WebsocketConnection;
   mutex: Mutex;
+
+  allocator: Allocator;
+  allocator_data: *void;
 }
 
 WebsocketConnection :: struct {
@@ -19,8 +23,8 @@ WebsocketConnection :: struct {
 }
 
 init :: (using websocket_server: *WebsocketServer) {
+  remember_allocators(websocket_server);
   init(*mutex);
-  remember_allocators(*websocket_connections);
 }
 
 add_connection :: (using websocket_server: *WebsocketServer, request: HttpRequest) -> success: bool {
@@ -50,13 +54,15 @@ add_connection :: (using websocket_server: *WebsocketServer, request: HttpReques
 
   {
     push_lock(*mutex);
-    push_allocator(websocket_connections.allocator, websocket_connections.allocator_data);
+    push_allocator(allocator, allocator_data);
 
     websocket_connection := New(WebsocketConnection);
     websocket_connection.websocket_server = websocket_server;
     websocket_connection.http_request = copy(request);
+
     websocket_connection.thread.data = websocket_connection;
 
+   
     thread_init(*websocket_connection.thread, websocket_connection_proc);
     thread_start(*websocket_connection.thread);
 
@@ -69,15 +75,24 @@ add_connection :: (using websocket_server: *WebsocketServer, request: HttpReques
 websocket_connection_proc :: (thread: *Thread) -> s64 {
   websocket_connection := cast(*WebsocketConnection)thread.data;
 
+  pool: Pool;
+  set_allocators(*pool);
+
   close_message_received := false;
   while !close_message_received {
+    push_allocator(pool_allocator, *pool);
+    auto_release_temp();
+
     message := read_websocket_message(websocket_connection.http_request.connection_fd);
     print("message.kind: %\n", message.kind);
     if message.kind == {
-      case .TEXT;
-        print("message payload: %\n", cast(string)message.payload);
+      case .TEXT; #through;
       case .BINARY;
-        print("message payload: % binary bytes\n", message.payload.count);
+        add_websocket_message_work(
+          websocket_connection.websocket_server.http_server,
+          *websocket_connection.http_request,
+          message
+        );
       case .PING;
         write_websocket_frame(
           websocket_connection.http_request.connection_fd,
@@ -91,6 +106,7 @@ websocket_connection_proc :: (thread: *Thread) -> s64 {
         );
         close(websocket_connection.http_request.connection_fd);
     }
+    release(*pool);
   }
 
   print("disconnected: %\n", websocket_connection.http_request.connection_fd);
@@ -100,7 +116,7 @@ websocket_connection_proc :: (thread: *Thread) -> s64 {
 WebsocketMessage :: struct {
   Kind :: enum {
     TEXT;
-    BINARY;
+    BINARY; 
     CLOSE;
     PING;
     PONG;
@@ -167,7 +183,7 @@ read_websocket_frame :: (connection_fd: s32) -> WebsocketFrame {
   next_byte: u8;
   bytes_read = read(connection_fd, *next_byte, size_of(u8));
   assert(bytes_read == size_of(u8), "failed to read first byte of frame");
-  
+
   websocket_frame.fin = parse_fin_from_frame_first_byte(next_byte);
   websocket_frame.opcode = parse_opcode_from_frame_first_byte(next_byte);
 
