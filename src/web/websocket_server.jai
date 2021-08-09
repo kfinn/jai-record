@@ -20,6 +20,8 @@ WebsocketConnection :: struct {
   thread: Thread;
   http_request: HttpRequest;
   websocket_server: *WebsocketServer;
+
+  write_mutex: Mutex;
 }
 
 init :: (using websocket_server: *WebsocketServer) {
@@ -57,6 +59,7 @@ add_connection :: (using websocket_server: *WebsocketServer, request: HttpReques
     push_allocator(allocator, allocator_data);
 
     websocket_connection := New(WebsocketConnection);
+    init(*websocket_connection.write_mutex);
     websocket_connection.websocket_server = websocket_server;
     websocket_connection.http_request = copy(request);
 
@@ -83,14 +86,13 @@ websocket_connection_proc :: (thread: *Thread) -> s64 {
     push_allocator(pool_allocator, *pool);
     auto_release_temp();
 
-    message := read_websocket_message(websocket_connection.http_request.connection_fd);
+    message := read_websocket_message(websocket_connection);
     print("message.kind: %\n", message.kind);
     if message.kind == {
       case .TEXT; #through;
       case .BINARY;
         add_websocket_message_work(
           websocket_connection.websocket_server.http_server,
-          *websocket_connection.http_request,
           message
         );
       case .PING;
@@ -121,15 +123,19 @@ WebsocketMessage :: struct {
     PING;
     PONG;
   }
+  websocket_connection: *WebsocketConnection;
   kind: Kind;
   payload: []u8;
 }
 
-read_websocket_message :: (connection_fd: s32) -> WebsocketMessage {
+read_websocket_message :: (websocket_connection: *WebsocketConnection) -> WebsocketMessage {
+  connection_fd := websocket_connection.http_request.connection_fd;
+
   next_websocket_frame: WebsocketFrame;
   next_websocket_frame = read_websocket_frame(connection_fd);
 
   websocket_message: WebsocketMessage;
+  websocket_message.websocket_connection = websocket_connection;
   websocket_message.kind = parse_websocket_message_kind_from_first_frame(next_websocket_frame);
 
   payload_builder: [..]u8;
@@ -252,6 +258,15 @@ parse_is_masked_from_frame_second_byte :: (second_byte: u8) -> bool {
 
 parse_maybe_length_from_frame_second_byte :: (second_byte: u8) -> u8 {
   return second_byte & 0x7f;
+}
+
+write_websocket_message :: (websocket_message: WebsocketMessage) {
+  websocket_frame: WebsocketFrame;
+  websocket_frame.fin = true;
+  websocket_frame.opcode = .TEXT;
+  websocket_frame.payload = websocket_message.payload;
+
+  write_websocket_frame(websocket_message.websocket_connection.http_request.connection_fd, websocket_frame);
 }
 
 write_websocket_frame :: (connection_fd: s32, websocket_frame: WebsocketFrame) {

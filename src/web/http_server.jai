@@ -37,7 +37,6 @@ WebsocketMessageWork :: struct {
   using base: HttpServerWorkBase;
   base.kind = .WEBSOCKET_MESSAGE;
 
-  http_request: *HttpRequest;
   websocket_message: WebsocketMessage;
 }
 
@@ -103,12 +102,11 @@ add_http_connection_work :: (http_server: *HttpServer, connection_fd: s32) {
   );
 }
 
-add_websocket_message_work :: (http_server: *HttpServer, http_request: *HttpRequest, websocket_message: WebsocketMessage) {
+add_websocket_message_work :: (http_server: *HttpServer, websocket_message: WebsocketMessage) {
   push_lock(*http_server.mutex);
   push_allocator(http_server.allocator, http_server.allocator_data);
 
   websocket_message_work := New(WebsocketMessageWork);
-  websocket_message_work.http_request = http_request;
   websocket_message_work.websocket_message = websocket_message;
   websocket_message_work.websocket_message.payload = array_copy(websocket_message.payload);
 
@@ -185,6 +183,27 @@ perform_http_connection_work :: (group: *Thread_Group, thread: *Thread, work: *H
 perform_websocket_message_work :: (group: *Thread_Group, thread: *Thread, work: *WebsocketMessageWork) -> Thread_Continue_Status {
   print("perform_websocket_message_work\n");
   print("websocket_message_work payload: %\n", cast(string)(work.websocket_message.payload));
+
+  TodosChannelMessage :: struct {
+    channel: string;
+    action: string;
+    todo_id: int;
+  }
+  json_parse_success, todos_channel_message, todos_channel_message_meta := parse_json_params(
+    TodosChannelMessage,
+    cast(string)work.websocket_message.payload
+  );
+
+  if todos_channel_message.channel == "TodosChannel" {
+    if todos_channel_message.action == {
+      case "completed";
+        TodosChannel.completed(work.websocket_message.websocket_connection, todos_channel_message.todo_id);
+      case "uncompleted";
+        TodosChannel.uncompleted(work.websocket_message.websocket_connection, todos_channel_message.todo_id);
+      case;
+        print("unexpected action: %\n", todos_channel_message.action);
+    }
+  }
 
   return .CONTINUE;
 }

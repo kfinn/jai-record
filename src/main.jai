@@ -23,6 +23,8 @@
 #load "repos/tags_repo.jai";
 #load "repos/taggings_repo.jai";
 
+#load "channels/todos_channel.jai";
+
 #load "sql/sql_delete.jai";
 #load "sql/sql_insert.jai";
 #load "sql/sql_select.jai";
