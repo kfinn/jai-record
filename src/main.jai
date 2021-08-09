@@ -6,6 +6,7 @@
 #import "String";
 #import "Thread";
 #import "Base64_Encode";
+#import "Bit_Operations";
 
 #import "jai-socket";
 #import "uniform";
