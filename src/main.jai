@@ -47,6 +47,8 @@
 #load "controllers/users_controller.jai";
 #load "controllers/user_tags_controller.jai";
 
+#load "connections/connection.jai";
+
 #load "views/todos/show.jai";
 
 #load "mutexes.jai";

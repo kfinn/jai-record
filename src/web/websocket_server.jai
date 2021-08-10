@@ -22,6 +22,8 @@ WebsocketConnection :: struct {
   websocket_server: *WebsocketServer;
 
   write_mutex: Mutex;
+
+  message_handler: (websocket_message: WebsocketMessage) -> ();
 }
 
 init :: (using websocket_server: *WebsocketServer) {
@@ -29,12 +31,12 @@ init :: (using websocket_server: *WebsocketServer) {
   init(*mutex);
 }
 
-add_connection :: (using websocket_server: *WebsocketServer, request: HttpRequest) -> success: bool {
+add_connection :: (using websocket_server: *WebsocketServer, request: HttpRequest, message_handler: (websocket_message: WebsocketMessage) -> ()) {
   sec_websocket_key_header := find_header(request.headers, SEC_WEBSOCKET_KEY_HEADER_KEY);
   if !sec_websocket_key_header {
     write(request.connection_fd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nBad Request");
     close(request.connection_fd);
-    return false;
+    return;
   }
   sec_websocket_accept_value_with_magic_string := join(
     sec_websocket_key_header.value,
@@ -62,17 +64,15 @@ add_connection :: (using websocket_server: *WebsocketServer, request: HttpReques
     init(*websocket_connection.write_mutex);
     websocket_connection.websocket_server = websocket_server;
     websocket_connection.http_request = copy(request);
+    websocket_connection.message_handler = message_handler;
 
     websocket_connection.thread.data = websocket_connection;
 
-   
     thread_init(*websocket_connection.thread, websocket_connection_proc);
     thread_start(*websocket_connection.thread);
 
     array_add(*websocket_connections, websocket_connection);
   }
-
-  return true;
 }
 
 websocket_connection_proc :: (thread: *Thread) -> s64 {
@@ -100,6 +100,8 @@ websocket_connection_proc :: (thread: *Thread) -> s64 {
           websocket_connection.http_request.connection_fd,
           pong_frame_response_from_message(message)
         );
+      case .PONG;
+        print("pong: %\n", message);
       case .CLOSE;
         close_message_received = true;
         write_websocket_frame(
@@ -263,7 +265,18 @@ parse_maybe_length_from_frame_second_byte :: (second_byte: u8) -> u8 {
 write_websocket_message :: (websocket_message: WebsocketMessage) {
   websocket_frame: WebsocketFrame;
   websocket_frame.fin = true;
-  websocket_frame.opcode = .TEXT;
+  if #complete websocket_message.kind == {
+    case .TEXT;
+      websocket_frame.opcode = .TEXT;
+    case .BINARY; 
+      websocket_frame.opcode = .BINARY;
+    case .CLOSE;
+      websocket_frame.opcode = .CLOSE;
+    case .PING;
+      websocket_frame.opcode = .PING;
+    case .PONG;
+      websocket_frame.opcode = .PONG;
+  }
   websocket_frame.payload = websocket_message.payload;
 
   write_websocket_frame(websocket_message.websocket_connection.http_request.connection_fd, websocket_frame);

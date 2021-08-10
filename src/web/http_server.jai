@@ -165,13 +165,7 @@ perform_http_connection_work :: (group: *Thread_Group, thread: *Thread, work: *H
 
     print("% % %\n", request.method, request.path, request.body);
 
-    websocket_upgrade_header: *HttpHeader;
-    upgrade_header := find_header(request.headers, UPGRADE_HEADER_KEY);
-    if upgrade_header && upgrade_header.value == UPGRADE_HEADER_WEBSOCKET_VALUE {
-      handle_websocket_upgrade_request(group, thread, request);
-    } else if handle_request_with_resources(request) {
-      close(connection_fd);
-    } else {
+    if !handle_request_with_resources(group, thread, request) {
       write(connection_fd, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found");
       close(connection_fd);
     }
@@ -184,26 +178,7 @@ perform_websocket_message_work :: (group: *Thread_Group, thread: *Thread, work: 
   print("perform_websocket_message_work\n");
   print("websocket_message_work payload: %\n", cast(string)(work.websocket_message.payload));
 
-  TodosChannelMessage :: struct {
-    channel: string;
-    action: string;
-    todo_id: int;
-  }
-  json_parse_success, todos_channel_message, todos_channel_message_meta := parse_json_params(
-    TodosChannelMessage,
-    cast(string)work.websocket_message.payload
-  );
-
-  if todos_channel_message.channel == "TodosChannel" {
-    if todos_channel_message.action == {
-      case "completed";
-        TodosChannel.completed(work.websocket_message.websocket_connection, todos_channel_message.todo_id);
-      case "uncompleted";
-        TodosChannel.uncompleted(work.websocket_message.websocket_connection, todos_channel_message.todo_id);
-      case;
-        print("unexpected action: %\n", todos_channel_message.action);
-    }
-  }
+  work.websocket_message.websocket_connection.message_handler(work.websocket_message);
 
   return .CONTINUE;
 }
@@ -215,9 +190,9 @@ find_header :: (headers: HttpHeaders, key: string) -> *HttpHeader {
   return null;
 }
 
-handle_websocket_upgrade_request :: (group: *Thread_Group, thread: *Thread, request: HttpRequest) {
+handle_websocket_upgrade_request :: (group: *Thread_Group, thread: *Thread, request: HttpRequest, message_handler: (websocket_message: WebsocketMessage) -> ()) {
   http_server_thread_group_data := cast(*HttpServer)group.data;
-  add_connection(*http_server_thread_group_data.websocket_server, request);
+  add_connection(*http_server_thread_group_data.websocket_server, request, message_handler);
 };
 
 parse_http_request :: (connection_fd: s32) -> HttpRequest, success: bool, error_response: string {

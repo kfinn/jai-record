@@ -54,6 +54,7 @@ draw_routes :: ($block: Code) -> string {
         print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
       }
       print_to_builder(*`routes_builder, ");\n");
+      print_to_builder(*`routes_builder, "      close(request.connection_fd);\n");
       print_to_builder(*`routes_builder, "      return true;\n");
       print_to_builder(*`routes_builder, "    }\n");
       print_to_builder(*`routes_builder, "  }\n");
@@ -74,6 +75,7 @@ draw_routes :: ($block: Code) -> string {
         print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
       }
       print_to_builder(*`routes_builder, ");\n");
+      print_to_builder(*`routes_builder, "      close(request.connection_fd);\n");
       print_to_builder(*`routes_builder, "      return true;\n");
       print_to_builder(*`routes_builder, "    }\n");
       print_to_builder(*`routes_builder, "  }\n");
@@ -94,6 +96,7 @@ draw_routes :: ($block: Code) -> string {
         print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
       }
       print_to_builder(*`routes_builder, ");\n");
+      print_to_builder(*`routes_builder, "      close(request.connection_fd);\n");
       print_to_builder(*`routes_builder, "      return true;\n");
       print_to_builder(*`routes_builder, "    }\n");
       print_to_builder(*`routes_builder, "  }\n");
@@ -110,7 +113,18 @@ draw_routes :: ($block: Code) -> string {
     }
   }
 
-  print_to_builder(*routes_builder, "handle_request_with_resources :: (request: HttpRequest) -> bool {\n");
+  websocket_connection :: ($route: string, $message_handler: string) #expand {
+    assert(`parent_route_components.count == 0);
+
+    print_to_builder(*`routes_builder, "{\n");
+    print_to_builder(*`routes_builder, "  if request_uri == \"/%\" && is_websocket_request(request) {\n", route);
+    print_to_builder(*`routes_builder, "    handle_websocket_upgrade_request(group, thread, request, %);\n", message_handler);
+    print_to_builder(*`routes_builder, "    return true;\n");
+    print_to_builder(*`routes_builder, "  }\n");
+    print_to_builder(*`routes_builder, "}\n");
+  }
+
+  print_to_builder(*routes_builder, "handle_request_with_resources :: (group: *Thread_Group, thread: *Thread, request: HttpRequest) -> bool {\n");
   print_to_builder(*routes_builder, "  request_uri := request.path;\n");
   print_to_builder(*routes_builder, "  request_method := request.method;\n");
   #insert_internal block;
@@ -118,4 +132,11 @@ draw_routes :: ($block: Code) -> string {
   print_to_builder(*routes_builder, "}\n");
 
   return builder_to_string(*routes_builder);
+}
+
+is_websocket_request :: (request: HttpRequest) -> bool {
+    websocket_upgrade_header: *HttpHeader;
+    upgrade_header := find_header(request.headers, UPGRADE_HEADER_KEY);
+
+    return upgrade_header && upgrade_header.value == UPGRADE_HEADER_WEBSOCKET_VALUE;
 }
