@@ -42,6 +42,7 @@
 #load "web/websocket_server.jai";
 #load "web/draw_routes.jai";
 #load "web/render.jai";
+#load "web/web_executor.jai";
 
 #load "controllers/todos_controller.jai";
 #load "controllers/users_controller.jai";

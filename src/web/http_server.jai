@@ -11,6 +11,7 @@ HttpMethod :: enum {
 }
 
 HttpRequest :: struct {
+  http_server: *HttpServer;
   method: HttpMethod;
   path: string;
   headers: HttpHeaders;
@@ -18,35 +19,9 @@ HttpRequest :: struct {
   connection_fd: s32;
 }
 
-HttpServerWorkBase :: struct {
-  Kind :: enum {
-    HTTP_CONNECTION;
-    WEBSOCKET_MESSAGE;
-  }
-  kind: Kind;
-}
-
-HttpConnectionWork :: struct {
-  using base: HttpServerWorkBase;
-  base.kind = .HTTP_CONNECTION;
-
-  connection_fd: s32;
-}
-
-WebsocketMessageWork :: struct {
-  using base: HttpServerWorkBase;
-  base.kind = .WEBSOCKET_MESSAGE;
-
-  websocket_message: WebsocketMessage;
-}
-
 HttpServer :: struct {
-  mutex: Mutex;
   websocket_server: WebsocketServer;
-  thread_group: Thread_Group;
-
-  allocator: Allocator;
-  allocator_data: *void;
+  web_executor: WebExecutor;
 }
 
 http_server_run :: () {
@@ -56,14 +31,10 @@ http_server_run :: () {
 }
 
 init :: (using http_server: *HttpServer) {
-  websocket_server.http_server = http_server;
+  init(*web_executor);
+
+  websocket_server.web_executor = *web_executor;
   init(*websocket_server);
-
-  thread_group.logging = false;
-  thread_group.data = http_server;
-  init(*thread_group, 5, http_server_work);
-
-  remember_allocators(http_server);
 }
 
 run :: (using http_server: *HttpServer) {
@@ -79,73 +50,34 @@ run :: (using http_server: *HttpServer) {
   listen_status := listen(socket_fd, 40);
   assert(listen_status == 0, "Unable to listen to socket. Status: %", listen_status);
 
-  start(*thread_group);
+  start(*web_executor);
 
   print("http_server awaiting connections\n");
   while true {
     connection_fd := accept(socket_fd);
     add_http_connection_work(http_server, connection_fd);
-    clear_completed_work(http_server);
   }
 }
 
-add_http_connection_work :: (http_server: *HttpServer, connection_fd: s32) {
-  push_lock(*http_server.mutex);
-  push_allocator(http_server.allocator, http_server.allocator_data);
+HttpConnectionWork :: struct {
+  using base: WebExecutorWorkBase;
+  base.type = HttpConnectionWork;
+  base.perform = perform_http_connection_work;
+  base.cleanup = cleanup_http_connection_work;
 
-  http_connection_work := New(HttpConnectionWork);
-  http_connection_work.connection_fd = connection_fd;
-
-  add_work(
-    *http_server.thread_group,
-    http_connection_work
-  );
+  http_server: *HttpServer;
+  connection_fd: s32;
 }
 
-add_websocket_message_work :: (http_server: *HttpServer, websocket_message: WebsocketMessage) {
-  push_lock(*http_server.mutex);
-  push_allocator(http_server.allocator, http_server.allocator_data);
-
-  websocket_message_work := New(WebsocketMessageWork);
-  websocket_message_work.websocket_message = websocket_message;
-  websocket_message_work.websocket_message.payload = array_copy(websocket_message.payload);
-
-  add_work(
-    *http_server.thread_group,
-    websocket_message_work
-  );
+copy :: (http_connection_work: HttpConnectionWork) -> *HttpConnectionWork {
+  result := New(HttpConnectionWork);
+  <<result = http_connection_work;
+  return result;
 }
 
-clear_completed_work :: (using http_server: *HttpServer) {
-  push_lock(*http_server.mutex);
-  push_allocator(allocator, allocator_data);
-
-  for get_completed_work(*thread_group) {
-    http_server_work_base := cast(*HttpServerWorkBase)it;
-
-    if #complete http_server_work_base.kind == {
-      case .HTTP_CONNECTION;
-        free(cast(*HttpConnectionWork)it);
-      case .WEBSOCKET_MESSAGE; 
-        websocket_message_work := cast(*WebsocketMessageWork)it;
-        array_free(websocket_message_work.websocket_message.payload);
-        free(websocket_message_work);
-    }
-  }
-}
-
-http_server_work :: (group: *Thread_Group, thread: *Thread, work: *void) -> Thread_Continue_Status {
-  http_server_work_base := cast(*HttpServerWorkBase)work;
-  if #complete http_server_work_base.kind == {
-    case .HTTP_CONNECTION;
-      return perform_http_connection_work(group, thread, xx http_server_work_base);
-    case .WEBSOCKET_MESSAGE;
-      return perform_websocket_message_work(group, thread, xx http_server_work_base);
-  }
-}
-
-perform_http_connection_work :: (group: *Thread_Group, thread: *Thread, work: *HttpConnectionWork) -> Thread_Continue_Status {
-  connection_fd := work.connection_fd;
+perform_http_connection_work :: (web_executor_work: *WebExecutorWorkBase) -> Thread_Continue_Status {
+  http_connection_work := cast(*HttpConnectionWork)web_executor_work;
+  connection_fd := http_connection_work.connection_fd;
 
   pool: Pool;
   set_allocators(*pool);
@@ -156,7 +88,7 @@ perform_http_connection_work :: (group: *Thread_Group, thread: *Thread, work: *H
     push_allocator(pool_allocator, *pool);
     auto_release_temp();
 
-    request, success, error_response := parse_http_request(connection_fd);
+    request, success, error_response := parse_http_request(http_connection_work.http_server, connection_fd);
     if !success {
       write(connection_fd, error_response);
       close(connection_fd);
@@ -165,7 +97,7 @@ perform_http_connection_work :: (group: *Thread_Group, thread: *Thread, work: *H
 
     print("% % %\n", request.method, request.path, request.body);
 
-    if !handle_request_with_resources(group, thread, request) {
+    if !handle_request_with_resources(request) {
       write(connection_fd, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found");
       close(connection_fd);
     }
@@ -174,13 +106,20 @@ perform_http_connection_work :: (group: *Thread_Group, thread: *Thread, work: *H
   return .CONTINUE;
 }
 
-perform_websocket_message_work :: (group: *Thread_Group, thread: *Thread, work: *WebsocketMessageWork) -> Thread_Continue_Status {
-  print("perform_websocket_message_work\n");
-  print("websocket_message_work payload: %\n", cast(string)(work.websocket_message.payload));
+cleanup_http_connection_work :: (web_executor_work: *WebExecutorWorkBase) {
+  http_connection_work := cast(*HttpConnectionWork)web_executor_work;
+  free(http_connection_work);
+}
 
-  work.websocket_message.websocket_connection.message_handler(work.websocket_message);
+add_http_connection_work :: (using http_server: *HttpServer, connection_fd: s32) {
+  http_connection_work: HttpConnectionWork;
+  http_connection_work.http_server = http_server;
+  http_connection_work.connection_fd = connection_fd;
 
-  return .CONTINUE;
+  add_work(
+    *web_executor,
+    http_connection_work
+  );
 }
 
 find_header :: (headers: HttpHeaders, key: string) -> *HttpHeader {
@@ -190,12 +129,7 @@ find_header :: (headers: HttpHeaders, key: string) -> *HttpHeader {
   return null;
 }
 
-handle_websocket_upgrade_request :: (group: *Thread_Group, thread: *Thread, request: HttpRequest, message_handler: (websocket_message: WebsocketMessage) -> ()) {
-  http_server_thread_group_data := cast(*HttpServer)group.data;
-  add_connection(*http_server_thread_group_data.websocket_server, request, message_handler);
-};
-
-parse_http_request :: (connection_fd: s32) -> HttpRequest, success: bool, error_response: string {
+parse_http_request :: (http_server: *HttpServer, connection_fd: s32) -> HttpRequest, success: bool, error_response: string {
   validate :: (condition: bool, $message: string = "Internal Server Error", print_args: ..Any) #expand {
     if !condition {
       formatted_message := sprint(message, ..print_args);
@@ -240,6 +174,7 @@ parse_http_request :: (connection_fd: s32) -> HttpRequest, success: bool, error_
   }
 
   request: HttpRequest;
+  request.http_server = http_server;
   request.method = method;
   request.path = path;
   request.headers = headers;
