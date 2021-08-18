@@ -60,6 +60,9 @@
 #load "byte_order.jai";
 
 main :: () {
-  compile_http_routes();
+  {
+    auto_release_temp();
+    compile_http_routes();
+  }
   http_server_run();
 }
