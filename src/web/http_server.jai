@@ -116,7 +116,7 @@ add_http_connection_work :: (using http_server: *HttpServer, connection_fd: s32)
   http_connection_work.http_server = http_server;
   http_connection_work.connection_fd = connection_fd;
 
-  add_work(
+  web_executor_add_work(
     *web_executor,
     http_connection_work
   );

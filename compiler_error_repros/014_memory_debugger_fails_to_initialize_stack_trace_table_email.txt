@@ -1,0 +1,7 @@
+Hi,
+
+I think I found a memory debugger bug. It seems like there's a problem with `stack_trace_table`. I regularly get a crash on a `free` call when I meant to `alloc` with the debugger enabled. It seems like this is due to `stack_trace_table` never being properly initialized, so it never has its own allocator.
+
+I've attached a repro and the output I see when I run it.
+
+Thanks!

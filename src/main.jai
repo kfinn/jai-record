@@ -1,4 +1,5 @@
-#import "Basic"()(MEMORY_DEBUGGER=true);
+#import "Basic";
+// #import "Basic"()(MEMORY_DEBUGGER=true);
 #import "Compiler";
 #import "Hash_Table";
 #import "Pool";
@@ -59,5 +60,6 @@
 #load "byte_order.jai";
 
 main :: () {
+  compile_http_routes();
   http_server_run();
 }

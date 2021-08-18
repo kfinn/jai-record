@@ -27,7 +27,7 @@ start :: (using web_executor: *WebExecutor) {
   start(*web_executor.thread_group);
 }
 
-add_work :: (using web_executor: *WebExecutor, work: $Work) {
+web_executor_add_work :: (using web_executor: *WebExecutor, work: $Work) {
   push_allocator(allocator, allocator_data);
   push_lock(*mutex);
 

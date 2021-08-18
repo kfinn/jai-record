@@ -92,24 +92,26 @@ websocket_connection_proc :: (thread: *Thread) -> s64 {
   websocket_connection := cast(*WebsocketConnection)thread.data;
 
   while !websocket_connection.closed {
-    pool: Pool;
-    set_allocators(*pool);
-    defer release(*pool);
-    {
-      push_allocator(pool_allocator, *pool);
-      auto_release_temp();
-
-      websocket_message, success := read_websocket_message(websocket_connection);
-      if success {
-        add_websocket_message_work(websocket_message);
-      } else {
-        push_lock(*websocket_connection.write_mutex);
-        websocket_connection.closed = true;
-      }
-    }
+    handle_next_websocket_message(websocket_connection);
   }
 
   return 0;
+}
+
+handle_next_websocket_message :: (websocket_connection: *WebsocketConnection) {
+  pool: Pool;
+  set_allocators(*pool);
+  defer reset(*pool);
+  push_allocator(pool_allocator, *pool);
+  auto_release_temp();
+
+  websocket_message, success := read_websocket_message(websocket_connection);
+  if success {
+    add_websocket_message_work(websocket_message);
+  } else {
+    push_lock(*websocket_connection.write_mutex);
+    websocket_connection.closed = true;
+  }
 }
 
 WebsocketMessageWork :: struct {
@@ -122,12 +124,13 @@ WebsocketMessageWork :: struct {
 }
 
 copy :: (websocket_message_work: WebsocketMessageWork) -> *WebsocketMessageWork {
-  result := New(WebsocketMessageWork);
+  result := New(WebsocketMessageWork, initialized=false);
   <<result = websocket_message_work;
 
   copied_payload := NewArray(
     websocket_message_work.websocket_message.payload.count,
-    u8
+    u8,
+    initialized=false
   );
   memcpy(
     copied_payload.data,
@@ -135,7 +138,7 @@ copy :: (websocket_message_work: WebsocketMessageWork) -> *WebsocketMessageWork 
     size_of(u8) * websocket_message_work.websocket_message.payload.count
   );
   result.websocket_message.payload = copied_payload;
-  
+
   return result;
 }
 
@@ -189,7 +192,7 @@ add_websocket_message_work :: (websocket_message: WebsocketMessage) {
   websocket_message_work: WebsocketMessageWork;
   websocket_message_work.websocket_message = websocket_message;
 
-  add_work(
+  web_executor_add_work(
     websocket_message.websocket_connection.websocket_server.web_executor,
     websocket_message_work
   );

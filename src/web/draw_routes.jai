@@ -17,9 +17,19 @@ RouteComponent :: struct {
 
 EMPTY_BLOCK :: #code {};
 
+compile_http_routes :: () {
+  for ROUTE_PATTERNS {
+    regexp, success := compile(it);
+    assert(success, "invalid route pattern: %", it);
+    COMPILED_ROUTES[it_index] = regexp;
+  }
+}
 
 draw_routes :: ($block: Code) -> string {
   parent_route_components :: RouteComponent.[];
+
+  route_patterns: [..]string;
+
   routes_builder: String_Builder;
   defer free_buffers(*routes_builder);
 
@@ -44,9 +54,11 @@ draw_routes :: ($block: Code) -> string {
 
     index_member := find_type_info_struct_member(controller_type_info, "index");
     if index_member {
+      array_add(*route_patterns, sprint("\"%/?$\"", route_pattern_prefix));
+      route_index := route_patterns.count - 1;
+
       print_to_builder(*`routes_builder, "  {\n");
-      print_to_builder(*`routes_builder, "    index_pattern, compile_pattern_success := compile(\"%/?$\");\n", route_pattern_prefix);
-      print_to_builder(*`routes_builder, "    assert(compile_pattern_success, \"failed to compile route pattern\");\n");
+      print_to_builder(*`routes_builder, "    index_pattern := COMPILED_ROUTES[%];\n", route_index);
       print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, index_pattern);\n");
       print_to_builder(*`routes_builder, "    if matched && request_method == .GET {\n");
       print_to_builder(*`routes_builder, "      %.index(request", controller_type_info.name);
@@ -65,9 +77,11 @@ draw_routes :: ($block: Code) -> string {
       show_route_pattern := sprint("%/([^/]+)$", route_pattern_prefix);
       show_id_params_count := id_params_count + 1;
 
+      array_add(*route_patterns, sprint("\"%/?$\"", show_route_pattern));
+      route_index := route_patterns.count - 1;
+
       print_to_builder(*`routes_builder, "  {\n");
-      print_to_builder(*`routes_builder, "    show_pattern, compile_pattern_success := compile(\"%/?$\");\n", show_route_pattern);
-      print_to_builder(*`routes_builder, "    assert(compile_pattern_success, \"failed to compile route pattern\");\n");
+      print_to_builder(*`routes_builder, "    show_pattern := COMPILED_ROUTES[%];\n", route_index);
       print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, show_pattern);\n");
       print_to_builder(*`routes_builder, "    if matched && request_method == .GET {\n");
       print_to_builder(*`routes_builder, "      %.show(request", controller_type_info.name);
@@ -86,9 +100,11 @@ draw_routes :: ($block: Code) -> string {
       patch_route_pattern := sprint("%/([^/]+)$", route_pattern_prefix);
       show_id_params_count := id_params_count + 1;
 
+      array_add(*route_patterns, sprint("\"%/?$\"", patch_route_pattern));
+      route_index := route_patterns.count - 1;
+
       print_to_builder(*`routes_builder, "  {\n");
-      print_to_builder(*`routes_builder, "    patch_pattern, compile_pattern_success := compile(\"%/?$\");\n", patch_route_pattern);
-      print_to_builder(*`routes_builder, "    assert(compile_pattern_success, \"failed to compile route pattern\");\n");
+      print_to_builder(*`routes_builder, "    patch_pattern := COMPILED_ROUTES[%];\n", route_index);
       print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, patch_pattern);\n");
       print_to_builder(*`routes_builder, "    if matched && request_method == .PATCH {\n");
       print_to_builder(*`routes_builder, "      %.update(request", controller_type_info.name);
@@ -116,12 +132,12 @@ draw_routes :: ($block: Code) -> string {
   websocket_connection :: ($route: string, $message_handler: string) #expand {
     assert(`parent_route_components.count == 0);
 
-    print_to_builder(*`routes_builder, "{\n");
-    print_to_builder(*`routes_builder, "  if request_uri == \"/%\" && is_websocket_request(request) {\n", route);
-    print_to_builder(*`routes_builder, "    handle_websocket_upgrade_request(request, %);\n", message_handler);
-    print_to_builder(*`routes_builder, "    return true;\n");
+    print_to_builder(*`routes_builder, "  {\n");
+    print_to_builder(*`routes_builder, "    if request_uri == \"/%\" && is_websocket_request(request) {\n", route);
+    print_to_builder(*`routes_builder, "      handle_websocket_upgrade_request(request, %);\n", message_handler);
+    print_to_builder(*`routes_builder, "      return true;\n");
+    print_to_builder(*`routes_builder, "    }\n");
     print_to_builder(*`routes_builder, "  }\n");
-    print_to_builder(*`routes_builder, "}\n");
   }
 
   print_to_builder(*routes_builder, "handle_request_with_resources :: (request: HttpRequest) -> bool {\n");
@@ -130,6 +146,15 @@ draw_routes :: ($block: Code) -> string {
   #insert_internal block;
   print_to_builder(*routes_builder, "  return false;\n");
   print_to_builder(*routes_builder, "}\n");
+
+  print_to_builder(*routes_builder, "COMPILED_ROUTES: [%]Regexp;\n", route_patterns.count);
+  print_to_builder(*routes_builder, "ROUTE_PATTERNS :: string.[\n");
+  for route_patterns {
+    print_to_builder(*routes_builder, "%", it);
+    if it_index < route_patterns.count - 1 print_to_builder(*routes_builder, ",");
+    print_to_builder(*routes_builder, "\n");
+  }
+  print_to_builder(*routes_builder, "];\n");
 
   return builder_to_string(*routes_builder);
 }
