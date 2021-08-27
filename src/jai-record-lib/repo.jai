@@ -1,6 +1,10 @@
 EmptyMutableRecord :: struct {};
 
-repo :: ($table_name: string, $Record: Type, $MutableRecord: Type = EmptyMutableRecord) -> Type {
+repo :: (
+  $table_name: string,
+  $Record: Type,
+  $MutableRecord: Type = EmptyMutableRecord
+) -> Type {
   IdType :: type_of(Record.id);
   Select :: #run sql_select(Record);
   Insert :: #run sql_insert(MutableRecord, IdType);
@@ -24,7 +28,10 @@ repo :: ($table_name: string, $Record: Type, $MutableRecord: Type = EmptyMutable
   return Repo;
 }
 
-repo_find :: ($repo: Type, id: $T) -> *repo.Record, success: bool {
+repo_find :: (
+  $repo: $RepoType, // TypeDotHack
+  id: $T
+) -> *repo.Record, success: bool {
   with_id: SqlWhere("id = :id", struct { id: T; });
   with_id.id = id;
 
@@ -35,12 +42,12 @@ repo_find :: ($repo: Type, id: $T) -> *repo.Record, success: bool {
   return *records[0], true;
 }
 
-repo_all :: ($repo: Type) -> []repo.Record, success: bool {
+repo_all :: ($repo: $RepoType) -> []repo.Record, success: bool { // TypeDotHack
   records, success := repo_where(repo, EmptySqlWhere.{});
   return records, success;
 }
 
-repo_where :: ($repo: Type, where: $Where) -> []repo.Record, success: bool {
+repo_where :: ($repo: $RepoType, where: $Where) -> []repo.Record, success: bool { // TypeDotHack
   records, success := sql_select_execute(
     repo.Select,
     repo.table_name,
@@ -50,7 +57,7 @@ repo_where :: ($repo: Type, where: $Where) -> []repo.Record, success: bool {
   return records, true;
 }
 
-repo_save :: ($repo: Type, record: *repo.Record) -> success: bool {
+repo_save :: ($repo: $RepoType, record: *repo.Record) -> success: bool { // TypeDotHack
   if (record.id == 0) {
     insert: repo.Insert;
 
@@ -86,7 +93,7 @@ copy_mutable_fields :: (record: *$Record, mutable_fields: *$MutableFields) {
   }();
 }
 
-repo_delete :: ($repo: Type, record: *repo.Record) -> success: bool {
+repo_delete :: ($repo: $RepoType, record: *repo.Record) -> success: bool { // TypeDotHack
   where: SqlWhere("id = :id", struct { id: repo.IdType; });
   where.id = record.id;
 

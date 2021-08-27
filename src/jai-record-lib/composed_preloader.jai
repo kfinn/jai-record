@@ -28,7 +28,7 @@ composed_preloader :: ($lhs: Type, $rhs: Type) -> Type {
 }
 
 fetch_composed_preloader :: (
-  $composed_preloader: Type,
+  $composed_preloader: $ComposedPreloaderType, // TypeDotHack
   source_records: []composed_preloader.Source
 ) -> composed_preloader.Fetched {
   fetched: composed_preloader.Fetched;
@@ -44,7 +44,7 @@ fetch_composed_preloader :: (
 }
 
 associate_composed_preloader :: (
-  $composed_preloader: Type,
+  $composed_preloader: $ComposedPreloaderType, // TypeDotHack
   source_records: []composed_preloader.Source,
   destination_records: composed_preloader.Fetched
 ) -> []PreloadedResult(composed_preloader) {
