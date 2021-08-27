@@ -39,7 +39,7 @@ nested_preloader :: ($parent: Type, $child: Type) -> Type {
 }
 
 fetch_nested_preloader :: (
-  $nested_preloader: Type,
+  $nested_preloader: $NestedPreloaderType, // TypeDotHack
   source_records: []nested_preloader.Source
 ) -> nested_preloader.Fetched {
   result: nested_preloader.Fetched;
@@ -55,7 +55,7 @@ fetch_nested_preloader :: (
 }
 
 associate_nested_preloader :: (
-  $nested_preloader: Type,
+  $nested_preloader: $NestedPreloaderType, // TypeDotHack
   source_records: []nested_preloader.Source,
   fetched_records: nested_preloader.Fetched
 ) -> []PreloadedResult(nested_preloader) {

@@ -46,3 +46,4 @@ array_view :: inline (array: [] $T, index: int, count: int) -> [] T {
 #load "unicode_casefold.jai";
 #load "unicode_group.jai";
 #load "walk.jai";
+#import "Bit_Operations";

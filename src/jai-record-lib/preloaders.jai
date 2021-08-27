@@ -12,7 +12,7 @@ PreloadedResult :: struct($preloader: Type) {
 }
 
 preload :: (
-  $preloader: Type,
+  $preloader: $PreloaderType, // TypeDotHack
   source_records: []preloader.Source
 ) -> []PreloadedResult(preloader) {
   destination_records := preloader_fetch(preloader, source_records);
@@ -20,14 +20,14 @@ preload :: (
 }
 
 preloader_fetch :: (
-  $preloader: Type,
+  $preloader: $PreloaderType, // TypeDotHack
   source_records: []preloader.Source
 ) -> preloader.Fetched {
   return preloader.fetch(preloader, source_records);
 }
 
 preloader_associate :: (
-  $preloader: Type,
+  $preloader: $PreloaderType, // TypeDotHack
   source_records: []preloader.Source,
   destination_records: preloader.Fetched
 ) -> []PreloadedResult(preloader) {

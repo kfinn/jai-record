@@ -24,7 +24,7 @@ HasMany :: struct(
 }
 
 fetch_has_many :: (
-  $has_many: Type,
+  $has_many: $HasManyType, // TypeDotHack
   source_records: []has_many.Source
 ) -> has_many.Fetched {
   if !source_records {
@@ -43,7 +43,7 @@ fetch_has_many :: (
 }
 
 associate_has_many :: (
-  $has_many: Type,
+  $has_many: $HasManyType, // TypeDotHack
   source_records: []has_many.Source,
   fetched_records: has_many.Fetched
 ) -> []PreloadedResult(has_many) {
