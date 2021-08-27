@@ -1,3 +1,6 @@
+#import "Basic";
+#import "String";
+
 SQL_PLACEHOLDER_PREFIX :: ":";
 
 SqlComponent :: struct {

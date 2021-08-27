@@ -36,8 +36,8 @@ sql_insert :: ($InsertableFields: Type, $IdType: Type) -> Type {
 }
 
 sql_insert_execute :: ($into: string, insert: $Insert) -> id: Insert.IdType, success: bool {
-  connection, jai_record_pg_connection_success := jai_record_pg_connection();
-  if !jai_record_pg_connection_success return 0, false;
+  connection, postgres_connection_success := postgres_connection();
+  if !postgres_connection_success return 0, false;
 
   expression_string :: #run sprint("INSERT INTO % % RETURNING id;", into, Insert.SQL_EXPRESSION);
 

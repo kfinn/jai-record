@@ -34,8 +34,8 @@ sql_update_execute :: ($table_name: string, update: $Update) -> success: bool {
 }
 
 sql_update_execute :: ($table_name: string, update: $Update, where: $SqlWhere) -> success: bool {
-  connection, jai_record_pg_connection_success := jai_record_pg_connection();
-  if !jai_record_pg_connection_success return false;
+  connection, postgres_connection_success := postgres_connection();
+  if !postgres_connection_success return false;
 
   expression_string :: #run () -> string {
     expression_string_builder: String_Builder;

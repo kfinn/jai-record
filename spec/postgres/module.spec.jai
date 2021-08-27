@@ -1,17 +1,17 @@
 #run describe("postgres",
   before_each=#code {
-    connection := jai_record_pg_connection();
+    connection := postgres_connection();
     execute(connection, "BEGIN");
   },
   after_each=#code {
-    connection := jai_record_pg_connection();
+    connection := postgres_connection();
     execute(connection, "ROLLBACK");
   },
   body=#code{
   describe("execute", #code{
     describe("with nullable args", body=#code{
       it("interpolates args into the query string, specifying null for the null arguments", #code{
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
 
         User :: struct {
           id: int;
@@ -93,7 +93,7 @@
     });
     describe("with array args", body=#code {
       it("interpolates args into the query string, inserting multiple libpq args for a single array-valued arg", #code{
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
 
         InsertResult :: struct {
           id: int;

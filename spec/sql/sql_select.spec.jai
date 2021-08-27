@@ -21,16 +21,16 @@
   describe(
     "sql_select_execute",
     before_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "BEGIN");
     },
     after_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "ROLLBACK");
     },
     body=#code{
       it("executes the SQL SELECT", #code{
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
 
         execute(
           connection,

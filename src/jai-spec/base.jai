@@ -10,8 +10,6 @@ describe :: (
   after_all: Code = EMPTY_CODE,
   after_each: Code = EMPTY_CODE
 ) #expand {
-  push_jai_record_pg_connection_context();
-
   description := name;
   describe :: nested_describe;
 

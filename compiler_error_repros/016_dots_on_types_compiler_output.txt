@@ -1,0 +1,17 @@
+root@87878bd49e7b:/workspace# jai-linux compiler_error_repros/016_dots_on_types.jai
+
+In workspace #2 ("Target Program"):
+/workspace/compiler_error_repros/016_dots_on_types.jai:6,49: Error: Attempt to use '.' on a value, of type Type, where '.' has no meaning.
+
+    }
+    get_some_value :: ($some_value_source: Type) -> some_value_source.ResultType {
+
+/workspace/compiler_error_repros/016_dots_on_types.jai:6,49: Info: The type of this expression is Type. The value of the expression is (unknown polymorph type).
+
+    }
+    get_some_value :: ($some_value_source: Type) -> some_value_source.ResultType {
+
+/workspace/compiler_error_repros/016_dots_on_types.jai:6,21: Info: Here is the declaration to which that identifier resolves.
+
+    }
+    get_some_value :: ($some_value_source: Type) -> some_value_source.ResultType {

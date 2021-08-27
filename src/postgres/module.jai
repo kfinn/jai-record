@@ -1,4 +1,12 @@
+#import "Pool";
+#import "Basic";
+#import "String";
+#import "parse_sql";
+#import "type_infos";
+
 #load "libpq.jai";
+#load "pq_types.jai";
+#load "postgres_connection.jai";
 
 connect :: (conn_str: string) -> *PGconn, success: bool {
 	conn_c_str := to_c_string(conn_str);

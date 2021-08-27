@@ -43,9 +43,12 @@
     result.count = result_bytes.count;
     result.data = result_bytes.data;
 
-    expect(result, to_equal(replace(#string JSON
+    expected_with_newline := #string JSON
 {"to_render":{"children":[{"id":12,"value":"\"poo\"\\","deeper_child":{"id":17}},{"id":23,"value":"second","deeper_child":{"id":674}}]}}
-    JSON, "\n", "")));
+    JSON
+    expected := expected_with_newline;
+    expected.count -= 1;
+    expect(result, to_equal(expected));
   });
 
   it("renders nullable types", #code{
@@ -99,8 +102,11 @@
     result.count = result_bytes.count;
     result.data = result_bytes.data;
 
-    expect(result, to_equal(replace(#string JSON
+    expected_with_newline := #string JSON
 {"values":[{"string_value":null,"int_value":null},{"string_value":"hello","int_value":574}]}
-    JSON, "\n", "")));
+    JSON;
+    expected := expected_with_newline;
+    expected.count -= 1;
+    expect(result, to_equal(expected));
   });
 });

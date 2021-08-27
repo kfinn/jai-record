@@ -1,0 +1,7 @@
+Hi,
+
+Spotted a bug in the String module, where `replace` fails when `s` ends with `old`. I think the error comes from its dependence on `split`. Since `split` doesn't include a trailing empty string in that case, we end up just truncating the trailing match instead of replacing it.
+
+I've attached a repro and its output.
+
+Thanks!

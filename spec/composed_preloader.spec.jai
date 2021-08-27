@@ -2,11 +2,11 @@
   describe(
     "preload_composed_preloader",
     before_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "BEGIN");
     },
     after_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "ROLLBACK");
     },
     body=#code{
@@ -62,7 +62,7 @@
           "user_id",
         );
 
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
 
         InsertResult :: struct { id: int; }
 
@@ -191,6 +191,7 @@
           todo_id: int;
           tag_id: int;
         }
+        TaggingsRepo :: #run repo("taggings", Tagging);
 
         TodoBelongsToUser :: BelongsTo(
           TodosRepo,
@@ -208,7 +209,7 @@
           "todo_id"
         );
 
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
 
         InsertResult :: struct { id: int; }
 

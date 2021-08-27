@@ -1,3 +1,5 @@
+#import "Basic";
+
 find_member :: (name: string, type_info_struct: *Type_Info_Struct) -> *Type_Info_Struct_Member {
   for * member: type_info_struct.members {
     if member.name == name return member;

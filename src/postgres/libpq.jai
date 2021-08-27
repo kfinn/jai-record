@@ -2,8 +2,6 @@
 
 Oid :: u32;
 
-#load "pq_types.jai";
-
 InvalidOid : Oid : 0;
 
 PG_DIAG_SEVERITY :: #char "S";

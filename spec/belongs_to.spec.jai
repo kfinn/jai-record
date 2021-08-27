@@ -2,11 +2,11 @@
   describe(
     "preload",
     before_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "BEGIN");
     },
     after_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "ROLLBACK");
     },
     body=#code{
@@ -40,7 +40,7 @@
           "user_id"
         );
 
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
 
         InsertResult :: struct { id: int; }
 
@@ -170,7 +170,7 @@
           )
         );
 
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
 
         InsertResult :: struct { id: int; }
 

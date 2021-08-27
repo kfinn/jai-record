@@ -1,17 +1,17 @@
 #run describe(
   "sql_delete.jai", 
   before_each=#code {
-    connection := jai_record_pg_connection();
+    connection := postgres_connection();
     execute(connection, "BEGIN");
   },
   after_each=#code {
-    connection := jai_record_pg_connection();
+    connection := postgres_connection();
     execute(connection, "ROLLBACK");
   },
   body=#code {
     it("delete, with a where expression, deletes matching records", #code {
-        connection, jai_record_pg_connection_success := jai_record_pg_connection();
-        expect(jai_record_pg_connection_success, to_equal(true));
+        connection, postgres_connection_success := postgres_connection();
+        expect(postgres_connection_success, to_equal(true));
 
       ExecuteInsertResult :: struct {
         id: int;

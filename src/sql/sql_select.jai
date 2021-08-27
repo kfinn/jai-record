@@ -33,8 +33,8 @@ sql_select_execute :: ($Select: Type, $sql_from: string) -> []Select.Record, suc
 }
 
 sql_select_execute :: ($Select: Type, $sql_from: string, where: $Where) -> []Select.Record, success: bool {
-  connection, jai_record_pg_connection_success := jai_record_pg_connection();
-  if !jai_record_pg_connection_success return Select.Record.[], false;
+  connection, postgres_connection_success := postgres_connection();
+  if !postgres_connection_success return Select.Record.[], false;
 
   expression_string :: #run sql_select_to_string(Select.SQL_EXPRESSION, sql_from, Where);
   results, execute_success := execute(connection, Select.Record, expression_string, where);

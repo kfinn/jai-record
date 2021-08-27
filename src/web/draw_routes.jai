@@ -17,12 +17,23 @@ RouteComponent :: struct {
 
 EMPTY_BLOCK :: #code {};
 
-compile_http_routes :: () {
-  for ROUTE_PATTERNS {
+compile_http_routes :: (route_patterns: []string, compiled_routes: []Regexp) {
+  for route_patterns {
     regexp, success := compile(it);
     assert(success, "invalid route pattern: %", it);
-    COMPILED_ROUTES[it_index] = regexp;
+    compiled_routes[it_index] = regexp;
   }
+}
+
+Route :: struct {
+  Kind :: enum {
+    COLLECTION;
+    SINGLETON;
+  }
+
+  name: string;
+  controller: Type;
+  kind: Kind = .COLLECTION;
 }
 
 draw_routes :: ($block: Code) -> string {
