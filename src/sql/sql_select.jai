@@ -27,12 +27,12 @@ sql_select :: ($Record: Type) -> Type {
   return SqlSelect(SQL_EXPRESSION=sql_expression, Record=Record);
 };
 
-sql_select_execute :: ($Select: Type, $sql_from: string) -> []Select.Record, success: bool {
+sql_select_execute :: ($Select: $SelectType, $sql_from: string) -> []Select.Record, success: bool { // TypeDotHack
   results, success := sql_select_execute(Select, sql_from, EmptySqlWhere.{});
   return results, success;
 }
 
-sql_select_execute :: ($Select: Type, $sql_from: string, where: $Where) -> []Select.Record, success: bool {
+sql_select_execute :: ($Select: $SelectType, $sql_from: string, where: $Where) -> []Select.Record, success: bool { // TypeDotHack
   connection, jai_record_pg_connection_success := jai_record_pg_connection();
   if !jai_record_pg_connection_success return Select.Record.[], false;
 

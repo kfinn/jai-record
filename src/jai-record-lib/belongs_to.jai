@@ -24,7 +24,7 @@ BelongsTo :: struct(
 }
 
 fetch_belongs_to :: (
-  $belongs_to: Type,
+  $belongs_to: $BelongsToType, // TypeDotHack
   source_records: []belongs_to.Source
 ) -> belongs_to.Fetched {
   if !source_records {
@@ -51,7 +51,7 @@ fetch_belongs_to :: (
 }
 
 associate_belongs_to :: (
-  $belongs_to: Type,
+  $belongs_to: $BelongsToType, // TypeDotHack
   source_records: []belongs_to.Source,
   fetched_records: belongs_to.Fetched
 ) -> []PreloadedResult(belongs_to) {
