@@ -1,16 +1,8 @@
-#insert #run () -> string {
-  print("about to call draw_routes\n");
+#run draw_routes(#code {
+  websocket_connection("blah", "base_handle_message");
 
-  result := draw_routes(#code {
-    websocket_connection("blah", "base_handle_message");
-
-    resources("users", UsersController, #code{
-      resources("tags", UserTagsController);
-    });
-    resources("todos", TodosController);
+  resources("users", UsersController, #code{
+    resources("tags", UserTagsController);
   });
-
-  print("routes:\n\n%\n\n", result);
-
-  return result;
-}();
+  resources("todos", TodosController);
+});

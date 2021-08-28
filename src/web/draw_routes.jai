@@ -36,7 +36,7 @@ Route :: struct {
   kind: Kind = .COLLECTION;
 }
 
-draw_routes :: ($block: Code) -> string {
+draw_routes :: ($block: Code) -> string #expand {
   parent_route_components :: RouteComponent.[];
 
   route_patterns: [..]string;
@@ -45,13 +45,14 @@ draw_routes :: ($block: Code) -> string {
   defer free_buffers(*routes_builder);
 
   resources :: ($name: string, $controller: Type, $block: Code = EMPTY_BLOCK) #expand {
+    #run print("controller: %\n", controller);
     controller_type_info := type_info(controller);
 
     route_pattern_prefix_builder: String_Builder;
     defer free_buffers(*route_pattern_prefix_builder);
 
     id_params_count := 0;
-
+    
     print_to_builder(*route_pattern_prefix_builder, "^");
     for `parent_route_components {
       print_to_builder(*route_pattern_prefix_builder, "/%", it.name);
@@ -158,8 +159,8 @@ draw_routes :: ($block: Code) -> string {
   print_to_builder(*routes_builder, "  return false;\n");
   print_to_builder(*routes_builder, "}\n");
 
-  print_to_builder(*routes_builder, "COMPILED_ROUTES: [%]Regexp;\n", route_patterns.count);
-  print_to_builder(*routes_builder, "ROUTE_PATTERNS :: string.[\n");
+  print_to_builder(*routes_builder, "`COMPILED_ROUTES: [%]Regexp;\n", route_patterns.count);
+  print_to_builder(*routes_builder, "`ROUTE_PATTERNS :: string.[\n");
   for route_patterns {
     print_to_builder(*routes_builder, "%", it);
     if it_index < route_patterns.count - 1 print_to_builder(*routes_builder, ",");
