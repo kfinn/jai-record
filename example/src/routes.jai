@@ -8,7 +8,7 @@ UsersRoute :: struct {
 
 Routes :: struct {
   users :: UsersRoute;
-  todos : TodosRoute
+  todos :: TodosRoute;
 }
 
 route_request :: #run well_bound_draw_routes(Routes);

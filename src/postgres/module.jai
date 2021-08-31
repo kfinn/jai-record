@@ -118,9 +118,9 @@ send_query :: (conn: *PGconn, $command: string, args: $ArgsType) -> *PGresult #m
                 <<placeholder_type_info
               );
               type_info_struct := cast(*Type_Info_Struct)placeholder_type_info;
-              member := find_member(type_info_struct, placeholder_path_component);
+              member, find_member_success := find_member(type_info_struct, placeholder_path_component);
               assert(
-                member != null,
+                find_member_success,
                 "unable to find member \"%\" in type \"%\"",
                 placeholder_path_component,
                 <<cast(*Type_Info_Struct)placeholder_type_info
