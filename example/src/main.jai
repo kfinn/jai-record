@@ -39,12 +39,12 @@
 #load "routes.jai";
 
 main :: () {
-  {
-    auto_release_temp();
-    compile_http_routes(
-      ROUTE_PATTERNS,
-      COMPILED_ROUTES
-    );
-  }
-  http_server_run(handle_request_with_resources);
+  // {
+  //   auto_release_temp();
+  //   compile_http_routes(
+  //     ROUTE_PATTERNS,
+  //     COMPILED_ROUTES
+  //   );
+  // }
+  http_server_run(route_request);
 }

@@ -1,6 +1,6 @@
 #import "Basic";
 
-find_member :: (name: string, type_info_struct: *Type_Info_Struct) -> *Type_Info_Struct_Member {
+find_member :: (type_info_struct: *Type_Info_Struct, name: string) -> *Type_Info_Struct_Member {
   for * member: type_info_struct.members {
     if member.name == name return member;
     if member.flags & .USING {
@@ -12,9 +12,17 @@ find_member :: (name: string, type_info_struct: *Type_Info_Struct) -> *Type_Info
         assert(pointer_to.type == .STRUCT);
         member_type_info_struct = cast(*Type_Info_Struct)pointer_to;
       }
-      member_found_through_using := find_member(name, member_type_info_struct);
+      member_found_through_using := find_member(member_type_info_struct, name);
       if member_found_through_using return member_found_through_using;
     }
   }
   return null;
+}
+
+get_constant_member_type_info_struct_value :: (type_info_struct: *Type_Info_Struct, member: Type_Info_Struct_Member) -> *Type_Info_Struct {
+  member_value_address := cast(**Type_Info)(type_info_struct.constant_storage_buffer + member.offset_into_constant_storage);
+  member_value: *Type_Info = << member_value_address;
+  route_type_info := member_value;
+  assert(route_type_info.type == .STRUCT);
+  return cast(*Type_Info_Struct)route_type_info;
 }

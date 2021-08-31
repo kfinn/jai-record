@@ -103,8 +103,8 @@ perform_http_connection_work :: (web_executor_work: *WebExecutorWorkBase) -> Thr
 
     if !http_connection_work.http_server.request_handler(request) {
       write(connection_fd, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found");
-      close(connection_fd);
     }
+    close(connection_fd);
   }
 
   return .CONTINUE;

@@ -8,8 +8,11 @@
 #import "uniform";
 #import "mutexes";
 #import "byte_order";
+#import "arrays";
+#import "type_infos";
 
 #load "draw_routes.jai";
+#load "well_bound_draw_routes.jai";
 #load "http_server.jai";
 #load "render.jai";
 #load "web_executor.jai";
