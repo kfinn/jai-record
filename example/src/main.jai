@@ -32,19 +32,12 @@
 #load "controllers/users_controller.jai";
 #load "controllers/user_tags_controller.jai";
 
-#load "connections/connection.jai";
+#load "handle_websocket_message.jai";
 
 #load "views/todos/show.jai";
 
 #load "routes.jai";
 
 main :: () {
-  // {
-  //   auto_release_temp();
-  //   compile_http_routes(
-  //     ROUTE_PATTERNS,
-  //     COMPILED_ROUTES
-  //   );
-  // }
-  http_server_run(route_request);
+  http_server_run(handle_http_request);
 }

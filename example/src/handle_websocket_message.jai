@@ -1,4 +1,4 @@
-base_handle_message :: (websocket_message: WebsocketMessage) {
+handle_websocket_message :: (websocket_message: WebsocketMessage) {
   TodosChannelMessage :: struct {
     channel: string;
     action: string;

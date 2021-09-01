@@ -2,7 +2,7 @@ RequestHandler :: #type (http_request: HttpRequest) -> success: bool;
 
 
 well_bound_draw_routes :: ($routes: Type) -> RequestHandler {
-  request_handler :: (http_request: HttpRequest) -> success: bool {
+  request_handler_inner :: (http_request: HttpRequest) -> success: bool {
     path_components := split(http_request.path, "/");
     path_components.count -= 1;
     path_components.data += 1;
@@ -12,13 +12,21 @@ well_bound_draw_routes :: ($routes: Type) -> RequestHandler {
       string_builder: String_Builder;
       defer free_buffers(*string_builder);
 
-      draw_nested_routes_to_builder(*string_builder, xx type_info(routes), 0, .[]);
+      draw_nested_routes_to_builder(*string_builder, type_info(routes), 0, .[]);
 
       return builder_to_string(*string_builder);
-
     }();
+    
     return false;
   };
+
+  request_handler :: (http_request: HttpRequest) -> success: bool {
+    if request_handler_inner(http_request) {
+      close(http_request.connection_fd);
+      return true;
+    }
+    return false;
+  }
 
   return request_handler;
 }
