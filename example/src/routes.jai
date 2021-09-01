@@ -1,9 +1,18 @@
+UserTagsRoute :: struct {
+  controller :: UserTagsController;
+}
+
 TodosRoute :: struct {
   controller :: TodosController;
 }
 
+UsersRouteChildren :: struct {
+  tags :: UserTagsRoute;
+}
+
 UsersRoute :: struct {
   controller :: UsersController;
+  children :: UsersRouteChildren;
 }
 
 Routes :: struct {
@@ -12,19 +21,3 @@ Routes :: struct {
 }
 
 route_request :: #run well_bound_draw_routes(Routes);
-
-// route_request :: #run well_bound_draw_routes(struct {
-//   users :: struct {
-//     controller :: UsersController;
-//   };
-// });
-
-
-// #run draw_routes(#code {
-//   websocket_connection("blah", "base_handle_message");
-
-//   resources("users", UsersController, #code{
-//     resources("tags", UserTagsController);
-//   });
-//   resources("todos", TodosController);
-// });
