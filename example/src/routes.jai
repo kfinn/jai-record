@@ -20,7 +20,7 @@ Routes :: struct {
   todos :: TodosRoute;
 }
 
-handle_http_request_with_routes :: #run well_bound_draw_routes(Routes);
+handle_http_request_with_routes :: #run draw_routes(Routes);
 
 handle_htto_request_with_websockets :: (http_request: HttpRequest) -> success: bool {
   if http_request.path == "/ws" && is_websocket_request(http_request) {
