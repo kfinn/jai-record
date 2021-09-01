@@ -23,17 +23,17 @@
   describe(
     "sql_update_execute",
     before_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "BEGIN");
     },
     after_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "ROLLBACK");
     },
     body=#code {
       it("updates records in the database", #code {
-        connection, jai_record_pg_connection_success := jai_record_pg_connection();
-        expect(jai_record_pg_connection_success, to_equal(true));
+        connection, postgres_connection_success := postgres_connection();
+        expect(postgres_connection_success, to_equal(true));
 
         ExecuteInsertResult :: struct { id: int; };
         execute_insert_result, execute_insert_success := execute(

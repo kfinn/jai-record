@@ -22,10 +22,14 @@ HttpRequest :: struct {
 HttpServer :: struct {
   websocket_server: WebsocketServer;
   web_executor: WebExecutor;
+
+  RequestHandler :: #type (http_request: HttpRequest) -> success: bool;
+  request_handler: RequestHandler;
 }
 
-http_server_run :: () {
+http_server_run :: (request_handler: HttpServer.RequestHandler) {
   http_server: HttpServer;
+  http_server.request_handler = request_handler;
   init(*http_server);
   run(*http_server);
 }
@@ -84,7 +88,7 @@ perform_http_connection_work :: (web_executor_work: *WebExecutorWorkBase) -> Thr
   defer release(*pool);
 
   {
-    push_jai_record_pg_connection_context();
+    push_postgres_connection_context();
     push_allocator(pool_allocator, *pool);
     auto_release_temp();
 
@@ -97,9 +101,8 @@ perform_http_connection_work :: (web_executor_work: *WebExecutorWorkBase) -> Thr
 
     print("% % %\n", request.method, request.path, request.body);
 
-    if !handle_request_with_resources(request) {
+    if !http_connection_work.http_server.request_handler(request) {
       write(connection_fd, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found");
-      close(connection_fd);
     }
   }
 

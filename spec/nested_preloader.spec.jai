@@ -2,11 +2,11 @@
   describe(
     "preload_nested_preloader",
     before_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "BEGIN");
     },
     after_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "ROLLBACK");
     },
     body=#code{
@@ -44,7 +44,7 @@
         };
         TagsRepo :: #run repo("tags", Tag);
 
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
         InsertResult :: struct { id: int; }
         users_insert_results := execute(
           connection,
@@ -180,7 +180,7 @@
         }
         TodosRepo :: #run repo("todos", Todo);
 
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
         InsertResult :: struct { id: int; }
         insert_user_results := execute(
           connection,

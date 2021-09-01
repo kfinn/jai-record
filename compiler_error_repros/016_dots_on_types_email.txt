@@ -1,0 +1,11 @@
+Hi,
+
+I've encountered some new behavior which I'm not sure is a bug or working as intended, as of beta 80. I think it's related to the "Correctly report an error when operator '.' is used on Type-valued expressions for which it doesn't make sense" line from the changelog.
+
+In my codebase, I use a pattern like the one in my repro to define the database accessors for records from a specific table, so instead of `get_some_value` it's `repo_find :: ($repo: Type, id: int) -> repo.Record`. I can see how I'm kind of abusing the concept of a `Type` here, but I'm also totally stumped about another way to represent a constant struct that can be consumed this way.
+
+If this doesn't seem like a bug to you but actually culling some degenerate behavior that I've been relying on, do you have any suggestions for a different strategy?
+
+There's also some more info about this one on discord: https://discord.com/channels/661732390355337246/784843664651190273/880560854683238400
+
+Thanks!

@@ -1,4 +1,6 @@
- IS_BIG_ENDIAN :: #run big_endian();
+#import "Bit_Operations";
+
+IS_BIG_ENDIAN :: #run big_endian();
 
 big_endian :: () -> bool {
     x: s16 = 1;

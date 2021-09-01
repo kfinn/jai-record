@@ -1,11 +1,11 @@
 #run describe(
   "repo.jai",
   before_each=#code{
-    connection := jai_record_pg_connection();
+    connection := postgres_connection();
     execute(connection, "BEGIN");
   },
   after_each=#code{
-    connection := jai_record_pg_connection();
+    connection := postgres_connection();
     execute(connection, "ROLLBACK");
   },
   body=#code{
@@ -32,7 +32,7 @@
             id: int;
             email: string;
           }
-          connection := jai_record_pg_connection();
+          connection := postgres_connection();
           select_results := execute(
             connection,
             SelectResult,
@@ -57,7 +57,7 @@
           UsersRepo :: #run repo("users", User, TestMutableUserFields);
 
           InsertResult :: struct { id: int; }
-          connection := jai_record_pg_connection();
+          connection := postgres_connection();
           insert_results := execute(
             connection,
             InsertResult,
@@ -93,7 +93,7 @@
     describe("delete", #code{
       describe("with a persisted record", #code{
         it("deletes the record", #code{
-          connection := jai_record_pg_connection();
+          connection := postgres_connection();
           InsertResult :: struct { id: int; }
           insert_results := execute(
             connection,

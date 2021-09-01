@@ -1,167 +1,136 @@
-find_type_info_struct_member :: (type_info_struct: *Type_Info_Struct, member_name: string) -> *Type_Info_Struct_Member {
-  for * type_info_struct.members {
-    if it.name == member_name return it;
+RequestHandler :: #type (http_request: HttpRequest) -> success: bool;
+
+
+draw_routes :: ($routes: Type) -> RequestHandler {
+  request_handler_inner :: (http_request: HttpRequest) -> success: bool {
+    path_components := split(http_request.path, "/");
+    path_components.count -= 1;
+    path_components.data += 1;
+    if path_components.count == 0 return false;
+
+    #insert #run () -> string {
+      string_builder: String_Builder;
+      defer free_buffers(*string_builder);
+
+      draw_nested_routes_to_builder(*string_builder, type_info(routes), 0, .[]);
+
+      return builder_to_string(*string_builder);
+    }();
+    
+    return false;
+  };
+
+  request_handler :: (http_request: HttpRequest) -> success: bool {
+    if request_handler_inner(http_request) {
+      close(http_request.connection_fd);
+      return true;
+    }
+    return false;
   }
-  return null;
+
+  return request_handler;
 }
+
+parse_path_components :: (path: string) -> []string {
+  all_path_components := split(path, "/");
+  return slice(all_path_components, 1, all_path_components.count - 1);
+}
+
+#scope_file
 
 RouteComponent :: struct {
-  RouteComponentKind :: enum {
-    RESOURCE;
-    RESOURCES;
-  }
-
-  kind: RouteComponentKind;
   name: string;
+  id_path_component_index: int;
 }
 
-EMPTY_BLOCK :: #code {};
+draw_nested_routes_to_builder :: (string_builder: *String_Builder, routes_type_info_struct: *Type_Info_Struct, path_component_start_index: int, ancestors: []RouteComponent) {
+  print_to_builder(string_builder, "if path_components[%] == {\n", path_component_start_index);
 
-compile_http_routes :: () {
-  for ROUTE_PATTERNS {
-    regexp, success := compile(it);
-    assert(success, "invalid route pattern: %", it);
-    COMPILED_ROUTES[it_index] = regexp;
-  }
-}
+  for member: routes_type_info_struct.members {
+    route_type_info_struct := get_constant_member_type_info_struct_value(routes_type_info_struct, member);
+    controller_member, has_controller_member := find_member(route_type_info_struct, "controller");
+    assert(has_controller_member);
+    controller_type_info_struct := get_constant_member_type_info_struct_value(route_type_info_struct, controller_member);
+    assert(controller_type_info_struct != null);
 
-draw_routes :: ($block: Code) -> string {
-  parent_route_components :: RouteComponent.[];
+    qualified_controller_name_builder: String_Builder;
+    defer free_buffers(*qualified_controller_name_builder);
+    print_to_builder(*qualified_controller_name_builder, "routes.");
+    for ancestors {
+      print_to_builder(*qualified_controller_name_builder, "%.children.", it.name);
+    }
+    print_to_builder(*qualified_controller_name_builder, "%.controller", member.name);
+    qualified_controller_name := builder_to_string(*qualified_controller_name_builder);
 
-  route_patterns: [..]string;
+    print_to_builder(string_builder, "  case \"%\";\n", member.name);
+    has_index_member := has_member(controller_type_info_struct, "index");
+    if has_index_member {
+      print_to_builder(string_builder, "    if path_components.count == % {\n", path_component_start_index + 1);
+      print_to_builder(string_builder, "      if #complete http_request.method == {\n");
+      print_to_builder(string_builder, "        case .GET;\n");
+      print_to_builder(string_builder, "          %.index(http_request", qualified_controller_name);
+      for ancestors {
+        print_to_builder(string_builder, ", path_components[%]", it.id_path_component_index);
+      }
+      print_to_builder(string_builder, ");\n");
+      print_to_builder(string_builder, "          return true;\n");
+      print_to_builder(string_builder, "        case .PATCH;\n");
+      print_to_builder(string_builder, "          return false;\n");
+      print_to_builder(string_builder, "      }\n");
+      print_to_builder(string_builder, "    }\n");
+    }
 
-  routes_builder: String_Builder;
-  defer free_buffers(*routes_builder);
+    has_show_member := has_member(controller_type_info_struct, "show");
+    has_update_member := has_member(controller_type_info_struct, "update");
+    if has_show_member || has_update_member {
+      print_to_builder(string_builder, "    if path_components.count == % {\n", path_component_start_index + 2);
+      print_to_builder(string_builder, "      if #complete http_request.method == {\n");
+      print_to_builder(string_builder, "        case .GET;\n");
+      if has_show_member {
+        print_to_builder(string_builder, "          %.show(http_request", qualified_controller_name);
+        for ancestors {
+          print_to_builder(string_builder, ", path_components[%]", it.id_path_component_index);
+        }
+        print_to_builder(string_builder, ", path_components[%]);\n", path_component_start_index + 1);
+        print_to_builder(string_builder, "          return true;\n");
+      } else {
+        print_to_builder(string_builder, "          return false;\n");
+      }
+      print_to_builder(string_builder, "        case .PATCH;\n");
+      if has_update_member {
+        print_to_builder(string_builder, "          %.update(http_request", qualified_controller_name);
+        for ancestors {
+          print_to_builder(string_builder, ", path_components[%]", it.id_path_component_index);
+        }
+        print_to_builder(string_builder, ", path_components[%]);\n", path_component_start_index + 1);
+        print_to_builder(string_builder, "          return true;\n");
+      } else {
+        print_to_builder(string_builder, "          return false;\n");
+      }
+      print_to_builder(string_builder, "      }\n");
+      print_to_builder(string_builder, "    }\n");
 
-  resources :: ($name: string, $controller: Type, $block: Code = EMPTY_BLOCK) #expand {
-    controller_type_info := type_info(controller);
+      children_member, has_children_member := find_member(route_type_info_struct, "children");
+      if has_children_member {
+        nested_path_component_start_index := path_component_start_index + 2;
 
-    route_pattern_prefix_builder: String_Builder;
-    defer free_buffers(*route_pattern_prefix_builder);
+        nested_ancestors := NewArray(ancestors.count + 1, RouteComponent);
+        defer array_free(nested_ancestors);
 
-    id_params_count := 0;
+        for ancestors {
+          nested_ancestors[it_index] = it;
+        }
+        nested_ancestors[ancestors.count].name = member.name;
+        nested_ancestors[ancestors.count].id_path_component_index = path_component_start_index + 1;
 
-    print_to_builder(*route_pattern_prefix_builder, "^");
-    for `parent_route_components {
-      print_to_builder(*route_pattern_prefix_builder, "/%", it.name);
-      if it.kind == .RESOURCES {
-        print_to_builder(*route_pattern_prefix_builder, "/([^/]+)");
-        id_params_count += 1;
+        draw_nested_routes_to_builder(
+          string_builder,
+          get_constant_member_type_info_struct_value(route_type_info_struct, children_member),
+          nested_path_component_start_index,
+          nested_ancestors
+        );
       }
     }
-    print_to_builder(*route_pattern_prefix_builder, "/%", name);
-    route_pattern_prefix := builder_to_string(*route_pattern_prefix_builder);
-
-    index_member := find_type_info_struct_member(controller_type_info, "index");
-    if index_member {
-      array_add(*route_patterns, sprint("\"%/?$\"", route_pattern_prefix));
-      route_index := route_patterns.count - 1;
-
-      print_to_builder(*`routes_builder, "  {\n");
-      print_to_builder(*`routes_builder, "    index_pattern := COMPILED_ROUTES[%];\n", route_index);
-      print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, index_pattern);\n");
-      print_to_builder(*`routes_builder, "    if matched && request_method == .GET {\n");
-      print_to_builder(*`routes_builder, "      %.index(request", controller_type_info.name);
-      for id_param_index: 1..id_params_count {
-        print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
-      }
-      print_to_builder(*`routes_builder, ");\n");
-      print_to_builder(*`routes_builder, "      close(request.connection_fd);\n");
-      print_to_builder(*`routes_builder, "      return true;\n");
-      print_to_builder(*`routes_builder, "    }\n");
-      print_to_builder(*`routes_builder, "  }\n");
-    }
-
-    show_member := find_type_info_struct_member(controller_type_info, "show");
-    if show_member {
-      show_route_pattern := sprint("%/([^/]+)$", route_pattern_prefix);
-      show_id_params_count := id_params_count + 1;
-
-      array_add(*route_patterns, sprint("\"%/?$\"", show_route_pattern));
-      route_index := route_patterns.count - 1;
-
-      print_to_builder(*`routes_builder, "  {\n");
-      print_to_builder(*`routes_builder, "    show_pattern := COMPILED_ROUTES[%];\n", route_index);
-      print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, show_pattern);\n");
-      print_to_builder(*`routes_builder, "    if matched && request_method == .GET {\n");
-      print_to_builder(*`routes_builder, "      %.show(request", controller_type_info.name);
-      for id_param_index: 1..show_id_params_count {
-        print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
-      }
-      print_to_builder(*`routes_builder, ");\n");
-      print_to_builder(*`routes_builder, "      close(request.connection_fd);\n");
-      print_to_builder(*`routes_builder, "      return true;\n");
-      print_to_builder(*`routes_builder, "    }\n");
-      print_to_builder(*`routes_builder, "  }\n");
-    }
-
-    update_member := find_type_info_struct_member(controller_type_info, "update");
-    if update_member {
-      patch_route_pattern := sprint("%/([^/]+)$", route_pattern_prefix);
-      show_id_params_count := id_params_count + 1;
-
-      array_add(*route_patterns, sprint("\"%/?$\"", patch_route_pattern));
-      route_index := route_patterns.count - 1;
-
-      print_to_builder(*`routes_builder, "  {\n");
-      print_to_builder(*`routes_builder, "    patch_pattern := COMPILED_ROUTES[%];\n", route_index);
-      print_to_builder(*`routes_builder, "    matched, captures := match(request_uri, patch_pattern);\n");
-      print_to_builder(*`routes_builder, "    if matched && request_method == .PATCH {\n");
-      print_to_builder(*`routes_builder, "      %.update(request", controller_type_info.name);
-      for id_param_index: 1..show_id_params_count {
-        print_to_builder(*`routes_builder, ", captures[%]", id_param_index);
-      }
-      print_to_builder(*`routes_builder, ");\n");
-      print_to_builder(*`routes_builder, "      close(request.connection_fd);\n");
-      print_to_builder(*`routes_builder, "      return true;\n");
-      print_to_builder(*`routes_builder, "    }\n");
-      print_to_builder(*`routes_builder, "  }\n");
-    }
-
-    if block != EMPTY_BLOCK {
-      parent_route_components: [..]RouteComponent;
-      defer array_free(parent_route_components);
-
-      array_add(*parent_route_components, ..`parent_route_components);
-      array_add(*parent_route_components, RouteComponent.{.RESOURCES, name});
-
-      #insert_internal block;
-    }
   }
-
-  websocket_connection :: ($route: string, $message_handler: string) #expand {
-    assert(`parent_route_components.count == 0);
-
-    print_to_builder(*`routes_builder, "  {\n");
-    print_to_builder(*`routes_builder, "    if request_uri == \"/%\" && is_websocket_request(request) {\n", route);
-    print_to_builder(*`routes_builder, "      handle_websocket_upgrade_request(request, %);\n", message_handler);
-    print_to_builder(*`routes_builder, "      return true;\n");
-    print_to_builder(*`routes_builder, "    }\n");
-    print_to_builder(*`routes_builder, "  }\n");
-  }
-
-  print_to_builder(*routes_builder, "handle_request_with_resources :: (request: HttpRequest) -> bool {\n");
-  print_to_builder(*routes_builder, "  request_uri := request.path;\n");
-  print_to_builder(*routes_builder, "  request_method := request.method;\n");
-  #insert_internal block;
-  print_to_builder(*routes_builder, "  return false;\n");
-  print_to_builder(*routes_builder, "}\n");
-
-  print_to_builder(*routes_builder, "COMPILED_ROUTES: [%]Regexp;\n", route_patterns.count);
-  print_to_builder(*routes_builder, "ROUTE_PATTERNS :: string.[\n");
-  for route_patterns {
-    print_to_builder(*routes_builder, "%", it);
-    if it_index < route_patterns.count - 1 print_to_builder(*routes_builder, ",");
-    print_to_builder(*routes_builder, "\n");
-  }
-  print_to_builder(*routes_builder, "];\n");
-
-  return builder_to_string(*routes_builder);
-}
-
-is_websocket_request :: (request: HttpRequest) -> bool {
-    websocket_upgrade_header: *HttpHeader;
-    upgrade_header := find_header(request.headers, UPGRADE_HEADER_KEY);
-
-    return upgrade_header && upgrade_header.value == UPGRADE_HEADER_WEBSOCKET_VALUE;
+  print_to_builder(string_builder, "}\n");
 }

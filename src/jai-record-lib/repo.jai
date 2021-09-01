@@ -1,33 +1,3 @@
-#add_context jai_record_pg_connection: *PGconn;
-
-jai_record_pg_connection :: () -> *PGconn, success: bool {
-  if context.jai_record_pg_connection != null return context.jai_record_pg_connection, true;
-
-  connection, success := connect("postgres://jai_record:password@localhost/jai_record");
-
-  if success {
-    context.jai_record_pg_connection = connection;
-    return context.jai_record_pg_connection, true;
-  } else {
-    return null, false;
-  }
-}
-
-push_jai_record_pg_connection_context :: () #expand {
-  previous_jai_record_pg_connection := context.jai_record_pg_connection;
-  context.jai_record_pg_connection = null;
-  `defer {
-      if context.jai_record_pg_connection {
-        close_jai_record_pg_connection(context.jai_record_pg_connection);
-      }
-      context.jai_record_pg_connection = previous_jai_record_pg_connection;
-  }
-}
-
-close_jai_record_pg_connection :: (connection: *PGconn) {
-  PQfinish(connection);
-}
-
 EmptyMutableRecord :: struct {};
 
 repo :: (

@@ -21,16 +21,16 @@
   describe(
     "sql_insert_execute",
     before_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "BEGIN");
     },
     after_each=#code {
-      connection := jai_record_pg_connection();
+      connection := postgres_connection();
       execute(connection, "ROLLBACK");
     },
     body=#code{
       it("performs a SQL INSERT", #code{
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
 
         TestUserInsert :: #run sql_insert(struct {
           email: string;

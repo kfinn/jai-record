@@ -3,7 +3,7 @@
 
 SPEC_FILE_SUFFIX :: ".spec.jai";
 
-specs_run :: (workspace_under_test: Workspace) {
+specs_run :: (workspace_under_test: Workspace, path_to_jai_spec_base: string = "src/jai-spec/base.jai") {
   pool: Pool;
   set_allocators(*pool);
   defer reset(*pool);
@@ -22,7 +22,7 @@ specs_run :: (workspace_under_test: Workspace) {
   compiler_begin_intercept(specs_workspace);
 
   add_build_file("src/main.jai", specs_workspace);
-  add_build_file("jai-spec/base.jai", specs_workspace);
+  add_build_file(path_to_jai_spec_base, specs_workspace);
 
   files := file_list(
     "./spec",

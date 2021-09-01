@@ -1,7 +1,7 @@
 .build
 
 jai-record
-main
+example/todos
 
 .DS_Store
 **/.DS_Store

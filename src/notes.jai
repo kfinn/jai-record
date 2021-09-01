@@ -1,3 +1,6 @@
+#import "String";
+#import "Compiler";
+
 match_note :: (note_prefix: string, note_suffix: string, member: *Type_Info_Struct_Member) -> string, matches: bool {
   result_note: string;
   for note: member.notes {

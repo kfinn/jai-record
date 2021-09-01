@@ -3,6 +3,12 @@ SEC_WEBSOCKET_ACCEPT_MAGIC_STRING :: "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 WEBSOCKET_MEDIUM_CONTENT_LENGTH_MAX :: 65535;
 
+is_websocket_request :: (request: HttpRequest) -> bool {
+    websocket_upgrade_header: *HttpHeader;
+    upgrade_header := find_header(request.headers, UPGRADE_HEADER_KEY);
+
+    return upgrade_header && upgrade_header.value == UPGRADE_HEADER_WEBSOCKET_VALUE;
+}
 
 libcrypto :: #foreign_system_library "libcrypto";
 SHA1 :: (d: *u8, n: u64, md: *u8) -> *u8 #foreign libcrypto;

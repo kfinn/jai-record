@@ -60,7 +60,7 @@
     describe(
       "with some todos belonging to different users",
       before_each=#code {
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
         execute(connection, "BEGIN");
 
         UserInsertResult :: struct { id: int; };
@@ -90,7 +90,7 @@
         );
       },
       after_each=#code {
-        connection := jai_record_pg_connection();
+        connection := postgres_connection();
         execute(connection, "ROLLBACK");
       },
       body=#code {
