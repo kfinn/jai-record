@@ -35,6 +35,8 @@
 #load "handle_websocket_message.jai";
 
 #load "views/todos/show.jai";
+#load "views/users/index.jai";
+#load "views/user_tags/index.jai";
 
 #load "routes.jai";
 

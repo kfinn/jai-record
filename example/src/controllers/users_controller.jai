@@ -5,21 +5,13 @@ UsersController :: struct {
 
     print_to_builder(*response_builder, "users:\n\n");
 
-    users := preload(
-      UserHasManyTodos,
-      UsersRepo.all()
+    users := UsersRepo.all();
+    
+    write(
+      request.connection_fd,
+      "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: http://localhost:3000\r\n\r\n"
     );
-    for user: users {
-      print_to_builder(*response_builder, "user[%]: %\n", user.id, user.email);
-      for todo: user.todos {
-        print_to_builder(*response_builder, "  todo[%]: %\n", todo.id, todo.description);
-      }
-    }
-
-    response_body := builder_to_string(*response_builder);
-    response := sprint("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n%", response_body);
-    bytes_written := write(request.connection_fd, response);
-    assert(bytes_written == response.count);
+    users_index_json_view(request.connection_fd, users);
   }
 
   show :: (request: HttpRequest, user_id: string) {

@@ -39,7 +39,6 @@ TodosController :: struct {
     preloaded_todo := preloaded_todos[0];
 
     write(request.connection_fd, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
-
     todos_show_json_view(request.connection_fd, preloaded_todo);
   }
 
