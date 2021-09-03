@@ -1,8 +1,5 @@
-RequestHandler :: #type (http_request: HttpRequest) -> success: bool;
-
-
-draw_routes :: ($routes: Type) -> RequestHandler {
-  request_handler_inner :: (http_request: HttpRequest) -> success: bool {
+draw_routes :: ($routes: Type) -> HttpServer.RequestHandler {
+  request_handler_inner :: (http_request: *HttpRequest) -> success: bool {
     path_components := split(http_request.path, "/");
     path_components.count -= 1;
     path_components.data += 1;
@@ -20,7 +17,7 @@ draw_routes :: ($routes: Type) -> RequestHandler {
     return false;
   };
 
-  request_handler :: (http_request: HttpRequest) -> success: bool {
+  request_handler :: (http_request: *HttpRequest) -> success: bool {
     if request_handler_inner(http_request) {
       close(http_request.connection_fd);
       return true;
@@ -55,6 +52,7 @@ draw_nested_routes_to_builder :: (string_builder: *String_Builder, routes_type_i
 
     qualified_controller_name_builder: String_Builder;
     defer free_buffers(*qualified_controller_name_builder);
+
     print_to_builder(*qualified_controller_name_builder, "routes.");
     for ancestors {
       print_to_builder(*qualified_controller_name_builder, "%.children.", it.name);
@@ -109,27 +107,27 @@ draw_nested_routes_to_builder :: (string_builder: *String_Builder, routes_type_i
       }
       print_to_builder(string_builder, "      }\n");
       print_to_builder(string_builder, "    }\n");
+    }
 
-      children_member, has_children_member := find_member(route_type_info_struct, "children");
-      if has_children_member {
-        nested_path_component_start_index := path_component_start_index + 2;
+    children_member, has_children_member := find_member(route_type_info_struct, "children");
+    if has_children_member {
+      nested_path_component_start_index := path_component_start_index + 2;
 
-        nested_ancestors := NewArray(ancestors.count + 1, RouteComponent);
-        defer array_free(nested_ancestors);
+      nested_ancestors := NewArray(ancestors.count + 1, RouteComponent);
+      defer array_free(nested_ancestors);
 
-        for ancestors {
-          nested_ancestors[it_index] = it;
-        }
-        nested_ancestors[ancestors.count].name = member.name;
-        nested_ancestors[ancestors.count].id_path_component_index = path_component_start_index + 1;
-
-        draw_nested_routes_to_builder(
-          string_builder,
-          get_constant_member_type_info_struct_value(route_type_info_struct, children_member),
-          nested_path_component_start_index,
-          nested_ancestors
-        );
+      for ancestors {
+        nested_ancestors[it_index] = it;
       }
+      nested_ancestors[ancestors.count].name = member.name;
+      nested_ancestors[ancestors.count].id_path_component_index = path_component_start_index + 1;
+
+      draw_nested_routes_to_builder(
+        string_builder,
+        get_constant_member_type_info_struct_value(route_type_info_struct, children_member),
+        nested_path_component_start_index,
+        nested_ancestors
+      );
     }
   }
   print_to_builder(string_builder, "}\n");

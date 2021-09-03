@@ -17,13 +17,29 @@ HttpRequest :: struct {
   headers: HttpHeaders;
   body: string;
   connection_fd: s32;
+
+  response_status: HttpResponseStatus = .UNINITIALIZED;
+  has_repsonse_headers: bool = false;
+}
+
+HttpResponseStatus :: enum {
+  UNINITIALIZED :: 0;
+
+  OK :: 200;
+  CREATED :: 201;
+  NO_CONTENT :: 204;
+
+  NOT_FOUND :: 404;
+  UNPROCESSABLE_ENTITY :: 422;
+
+  INTERNAL_SERVER_ERROR :: 500;
 }
 
 HttpServer :: struct {
   websocket_server: WebsocketServer;
   web_executor: WebExecutor;
 
-  RequestHandler :: #type (http_request: HttpRequest) -> success: bool;
+  RequestHandler :: #type (http_request: *HttpRequest) -> success: bool;
   request_handler: RequestHandler;
 }
 
@@ -101,8 +117,10 @@ perform_http_connection_work :: (web_executor_work: *WebExecutorWorkBase) -> Thr
 
     print("% % %\n", request.method, request.path, request.body);
 
-    if !http_connection_work.http_server.request_handler(request) {
-      write(connection_fd, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found");
+    if !http_connection_work.http_server.request_handler(*request) {
+      print("in default render_error\n");
+      render_error(*request, .NOT_FOUND);
+      close(request.connection_fd);
     }
   }
 
